@@ -129,7 +129,7 @@ const fdur = ms => { const m = Math.round(ms / 60000); return m >= 60 ? `${Math.
 
 // --- datos (solo en este dispositivo) ---
 const KEY = 'forja-v1';
-const defaults = () => ({ custom: [], routines: [], workouts: [], active: null, rest: 90 });
+const defaults = () => ({ custom: [], routines: [], workouts: [], active: null, rest: 90, alias: {} }); // alias: nombre importado → id de ejercicio
 function load() {
   const raw = localStorage.getItem(KEY);
   if (!raw) return defaults();
@@ -159,7 +159,7 @@ function go(p, extra = {}) {
 addEventListener('popstate', () => { if (picker) { picker = null; renderSheet(); } else if (!TABS.includes(V.p)) { V = { p: V.tab, tab: V.tab }; render(); } });
 
 function render() {
-  const pages = { entreno: pEntreno, historial: pHistorial, ejercicios: pEjercicios, ajustes: pAjustes, rutina: pRutina, rutinaVer: pRutinaVer, workout: pWorkout, ejercicio: pEjercicio };
+  const pages = { entreno: pEntreno, historial: pHistorial, ejercicios: pEjercicios, ajustes: pAjustes, rutina: pRutina, rutinaVer: pRutinaVer, importar: pImportar, workout: pWorkout, ejercicio: pEjercicio };
   const [title, html] = pages[V.p]();
   $('#title').textContent = title;
   $('#view').innerHTML = html;
@@ -173,7 +173,7 @@ function pEntreno() {
   const a = S.active;
   if (!a) return ['Entrenar', `
     <button class="btn big" data-a="startEmpty">+ Empezar entreno vacío</button>
-    <div class="row between"><h2>Rutinas</h2><button class="btn ghost sm" data-a="newRoutine">+ Nueva rutina</button></div>
+    <div class="row between"><h2>Rutinas</h2><span class="row"><button class="btn ghost sm" data-a="importStart">Importar</button><button class="btn ghost sm" data-a="newRoutine">+ Nueva</button></span></div>
     ${S.routines.map(r => `<div class="card">
       <div class="tap" data-a="viewRoutine" data-id="${r.id}"><div class="row between"><b>${esc(r.name)}</b><span class="grip">›</span></div>
       <p class="muted">${esc(r.items.map(it => ex(it.exId).name).join(', '))}</p></div>
@@ -241,6 +241,60 @@ function pRutinaVer() {
       <span><b>${esc(e.name)}</b><br><small>${it.sets} series${it.reps ? ` · ${esc(it.reps)} reps` : ''} · ⏱ ${restTxt(it.rest ?? S.rest)}</small></span></button>`; }).join('')}</div>
     ${muscleBars(r.items.map(it => ({ exId: it.exId, n: it.sets })))}
     <button class="btn ghost wide" data-a="editRoutine" data-id="${r.id}">Editar rutina</button>`];
+}
+// --- importar rutina pegando el texto de otra app (Hevy: "3 series · 10-12 repeticiones" / "Descansa 1min 15s") ---
+const STOP = new Set(['de', 'del', 'la', 'el', 'al', 'con', 'en', 'un', 'una', 'los', 'las', 'agarre', 'a', 'y']);
+const SYN = { cable: 'polea', smith: 'barra', mancuerna: 'mancuernas', barbell: 'barra', dumbbell: 'mancuernas' };
+const VARIANT = new Set(['inclinado', 'declinado', 'cerrado', 'frontal', 'sentado', 'tumbado', 'colgado', 'martillo', 'rumano']); // distinguen variantes: pesan doble
+const toks = s => norm(s).replace(/[^a-z0-9ñ]+/g, ' ').split(' ').filter(w => w && !STOP.has(w)).map(w => (SYN[w] || w).replace(/(es|s)$/, ''));
+function guessEx(name) {
+  if (S.alias[norm(name)]) return { id: S.alias[norm(name)], score: 1 };
+  const a = toks(name), sum = ws => ws.reduce((t, w) => t + (VARIANT.has(w) ? 2 : 1), 0);
+  return allEx().reduce((best, e) => {
+    const b = toks(e.name), score = 2 * sum(a.filter(w => b.includes(w))) / (sum(a) + sum(b));
+    return score > best.score ? { id: e.id, score } : best;
+  }, { id: null, score: 0 });
+}
+function parseRoutine(text) {
+  const lines = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean), rows = [];
+  let title = '';
+  lines.forEach((l, i) => {
+    const m = l.match(/^(\d+)\s*(?:series?|sets?)\b\s*(?:[·•|-]\s*(.+))?$/i);
+    const x = l.match(/^(.+?)\s+(\d+)\s*[x×]\s*(\d+(?:\s*-\s*\d+)?)\b/i); // "Press banca 4x8-10"
+    if (m && i > 0) {
+      const restLine = lines[i + 1] || '', rm = restLine.match(/^(?:descansa|descanso|rest)\b/i);
+      const rest = rm ? (+(restLine.match(/(\d+)\s*min/i)?.[1] || 0)) * 60 + (+(restLine.match(/(\d+)\s*s\b/i)?.[1] || 0)) : S.rest;
+      if (!rows.length && i > 1) title = lines[i - 2];
+      rows.push({ src: lines[i - 1], sets: +m[1], reps: (m[2] || '').replace(/\s*(repeticiones|reps?)\b.*/i, '').trim(), rest });
+    } else if (x) rows.push({ src: x[1], sets: +x[2], reps: x[3].replace(/\s/g, ''), rest: S.rest });
+  });
+  rows.forEach(r => { const g = guessEx(r.src); r.pick = g.score >= .34 ? g.id : 'new'; });
+  return { name: title, rows };
+}
+let imp = null;
+function pImportar() {
+  if (!imp) return ['Importar rutina', `
+    <div class="card"><ol class="how">
+      <li>Abre el enlace de la rutina (Hevy u otra app) en el navegador del móvil.</li>
+      <li>Mantén pulsado el texto → <b>Seleccionar todo</b> → <b>Copiar</b>.</li>
+      <li>Pégalo aquí abajo y pulsa <b>Leer rutina</b>.</li></ol>
+      <p class="muted">También vale una lista escrita a mano, una línea por ejercicio: "Press banca 4x8-10".</p></div>
+    <textarea class="field" id="impText" rows="10" placeholder="Pega aquí el texto o el enlace…"></textarea>
+    <div id="impLink"></div>
+    <button class="btn wide" data-a="importRead">Leer rutina</button>`];
+  const opts = allEx().slice().sort((a, b) => a.name.localeCompare(b.name, 'es'));
+  return ['Revisar rutina', `
+    <input class="field" data-impname value="${esc(imp.name)}" placeholder="Nombre de la rutina">
+    <p class="muted">Comprueba que cada ejercicio corresponde con el de Forja. Lo que elijas se recordará para la próxima vez.</p>
+    ${imp.rows.map((r, i) => `<div class="card">
+      <small>${esc(r.src)}</small>
+      <div class="row" style="margin:6px 0">${r.pick === 'new' ? `<span class="thumb ph">+</span>` : thumb(ex(r.pick))}
+        <select class="field" style="margin:0" data-imp="${i}">
+          <option value="new" ${r.pick === 'new' ? 'selected' : ''}>➕ Crear «${esc(r.src)}» como ejercicio propio</option>
+          ${opts.map(e => `<option value="${e.id}" ${e.id === r.pick ? 'selected' : ''}>${esc(e.name)}</option>`).join('')}</select></div>
+      <small>${r.sets} series${r.reps ? ` · ${esc(r.reps)} reps` : ''} · ⏱ ${restTxt(r.rest)}</small></div>`).join('')}
+    <button class="btn wide" data-a="importSave">Guardar rutina</button>
+    <button class="btn ghost wide" data-a="importStart">Empezar de nuevo</button>`];
 }
 function pRutina() {
   return [draft.id ? 'Editar rutina' : 'Nueva rutina', `
@@ -398,6 +452,29 @@ const A = {
   rtRest: d => { const it = draft.items[d.i]; it.rest = Math.max(0, Math.min(600, (it.rest ?? S.rest) + +d.d)); render(); },
   restStep: d => { const it = S.active.items[d.i]; it.rest = Math.max(0, Math.min(600, it.rest + +d.d)); save(); render(); },
   viewRoutine: d => go('rutinaVer', { id: d.id, tab: 'entreno' }),
+  importStart: () => { imp = null; go('importar', { tab: 'entreno' }); },
+  importRead: () => {
+    const text = $('#impText').value.trim();
+    if (/^https?:\/\/\S+$/.test(text)) { // solo el enlace: hay que abrirlo y copiar su texto
+      $('#impLink').innerHTML = `<p class="tip">Con el enlace solo no se puede: ábrelo, copia el texto de la página y pégalo aquí.</p><a class="btn ghost wide" style="display:block;text-align:center;text-decoration:none" href="${esc(text)}" target="_blank" rel="noopener">Abrir enlace</a>`;
+      return;
+    }
+    const r = parseRoutine(text);
+    if (!r.rows.length) return toast('No encuentro ejercicios en ese texto');
+    imp = r; render();
+  },
+  importSave: () => {
+    if (!imp.name.trim()) return toast('Ponle un nombre a la rutina');
+    const items = imp.rows.map(r => {
+      let id = r.pick;
+      if (id === 'new') { id = 'c' + uid(); S.custom.push({ id, name: r.src, muscle: ex(guessEx(r.src).id || '').muscle || 'Core' }); }
+      S.alias[norm(r.src)] = id;
+      return { exId: id, sets: r.sets, reps: r.reps, rest: r.rest };
+    });
+    const id = uid();
+    S.routines.push({ id, name: imp.name.trim(), items }); imp = null; save();
+    toast('Rutina importada'); go('rutinaVer', { id, tab: 'entreno' });
+  },
   saveRoutine: () => {
     if (!draft.name.trim()) return toast('Ponle un nombre a la rutina');
     if (!draft.items.length) return toast('Añade al menos un ejercicio');
@@ -533,11 +610,13 @@ document.addEventListener('input', e => {
   } else if (d.w) { S.active[d.w] = t.value; save(); }
   else if (d.d) draft[d.d] = t.value;
   else if (d.rr) draft.items[d.rr].reps = t.value.trim();
+  else if ('impname' in d) imp.name = t.value;
   else if (d.search) { F[d.search].q = t.value; $('#' + d.search + 'List').innerHTML = exList(d.search); }
 });
 document.addEventListener('change', e => {
   const t = e.target, d = t.dataset;
-  if (d.setting) { S.rest = +t.value; save(); }
+  if (d.imp) { imp.rows[d.imp].pick = t.value; render(); }
+  else if (d.setting) { S.rest = +t.value; save(); }
   else if (t.id === 'importFile' && t.files[0]) importData(t.files[0]);
 });
 document.addEventListener('focusin', e => { if (e.target.dataset.f) e.target.select(); });
