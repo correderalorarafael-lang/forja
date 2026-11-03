@@ -1,5 +1,5 @@
 // shortcut: cache-first app shell; bump C on every release so phones pick up the new version.
-const C = 'forja-v3';
+const C = 'forja-v4';
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(C).then(c => c.addAll(['./', 'index.html', 'ejercicios.js', 'manifest.json', 'icon.svg'])));
   self.skipWaiting();

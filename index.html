@@ -258,15 +258,20 @@ function guessEx(name) {
 function parseRoutine(text) {
   const lines = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean), rows = [];
   let title = '';
+  // Tolerante con el texto leído de capturas: iconos sueltos y símbolos raros entre líneas.
+  const SETS = /^\W*(\d+)\s*(?:series?|sets?)\b\W*(.*)$/i, REST = /(?:descansa|descanso|rest)\b/i;
+  const nameish = l => !SETS.test(l) && !REST.test(l) && (l.match(/[a-záéíóúñü]/gi) || []).length >= 4 && !/^(descargar|download)$/i.test(l);
+  const prevName = i => { for (let k = i - 1; k >= 0 && k >= i - 3; k--) if (nameish(lines[k])) return k; return -1; };
   lines.forEach((l, i) => {
-    const m = l.match(/^(\d+)\s*(?:series?|sets?)\b\s*(?:[·•|-]\s*(.+))?$/i);
+    const m = l.match(SETS);
     const x = l.match(/^(.+?)\s+(\d+)\s*[x×]\s*(\d+(?:\s*-\s*\d+)?)\b/i); // "Press banca 4x8-10"
-    if (m && i > 0) {
-      const restLine = lines[i + 1] || '', rm = restLine.match(/^(?:descansa|descanso|rest)\b/i);
+    const k = m ? prevName(i) : -1;
+    if (k >= 0) {
+      const restLine = lines[i + 1] || '', rm = REST.test(restLine);
       const rest = rm ? (+(restLine.match(/(\d+)\s*min/i)?.[1] || 0)) * 60 + (+(restLine.match(/(\d+)\s*s\b/i)?.[1] || 0)) : S.rest;
-      if (!rows.length && i > 1) title = lines[i - 2];
-      rows.push({ src: lines[i - 1], sets: +m[1], reps: (m[2] || '').replace(/\s*(repeticiones|reps?)\b.*/i, '').trim(), rest });
-    } else if (x) rows.push({ src: x[1], sets: +x[2], reps: x[3].replace(/\s/g, ''), rest: S.rest });
+      if (!rows.length) { const t = prevName(k); if (t >= 0) title = lines[t]; }
+      rows.push({ src: lines[k].replace(/^\W+/, ''), sets: +m[1], reps: m[2].replace(/\s*(repeticiones|reps?)\b.*/i, '').replace(/[^\d-]/g, ''), rest });
+    } else if (x && !m) rows.push({ src: x[1], sets: +x[2], reps: x[3].replace(/\s/g, ''), rest: S.rest });
   });
   rows.forEach(r => { const g = guessEx(r.src); r.pick = g.score >= .34 ? g.id : 'new'; });
   return { name: title, rows };
@@ -274,14 +279,17 @@ function parseRoutine(text) {
 let imp = null;
 function pImportar() {
   if (!imp) return ['Importar rutina', `
-    <div class="card"><ol class="how">
-      <li>Abre el enlace de la rutina (Hevy u otra app) en el navegador del móvil.</li>
-      <li>Mantén pulsado el texto → <b>Seleccionar todo</b> → <b>Copiar</b>.</li>
-      <li>Pégalo aquí abajo y pulsa <b>Leer rutina</b>.</li></ol>
-      <p class="muted">También vale una lista escrita a mano, una línea por ejercicio: "Press banca 4x8-10".</p></div>
-    <textarea class="field" id="impText" rows="10" placeholder="Pega aquí el texto o el enlace…"></textarea>
-    <div id="impLink"></div>
-    <button class="btn wide" data-a="importRead">Leer rutina</button>`];
+    <div class="card"><h3>📷 Desde capturas de pantalla</h3><ol class="how">
+      <li>Abre el enlace de la rutina (Hevy u otra app) y haz captura de pantalla. Si es larga, haz varias.</li>
+      <li>Pulsa el botón y elige las capturas, en orden.</li></ol>
+      <button class="btn wide" data-a="importImgPick">Elegir capturas</button>
+      <input type="file" id="impImg" accept="image/*" multiple hidden>
+      <p class="muted" id="ocrMsg">El texto se lee en tu móvil; las imágenes no se envían a ningún sitio.</p></div>
+    <div class="card"><h3>📋 Pegando texto</h3>
+      <p class="muted">Si puedes copiar el texto de la rutina, pégalo aquí. También vale una lista escrita a mano, una línea por ejercicio: "Press banca 4x8-10".</p>
+      <textarea class="field" id="impText" rows="8" placeholder="Pega aquí el texto…"></textarea>
+      <div id="impLink"></div>
+      <button class="btn wide" data-a="importRead">Leer rutina</button></div>`];
   const opts = allEx().slice().sort((a, b) => a.name.localeCompare(b.name, 'es'));
   return ['Revisar rutina', `
     <input class="field" data-impname value="${esc(imp.name)}" placeholder="Nombre de la rutina">
@@ -453,6 +461,7 @@ const A = {
   restStep: d => { const it = S.active.items[d.i]; it.rest = Math.max(0, Math.min(600, it.rest + +d.d)); save(); render(); },
   viewRoutine: d => go('rutinaVer', { id: d.id, tab: 'entreno' }),
   importStart: () => { imp = null; go('importar', { tab: 'entreno' }); },
+  importImgPick: () => $('#impImg').click(),
   importRead: () => {
     const text = $('#impText').value.trim();
     if (/^https?:\/\/\S+$/.test(text)) { // solo el enlace: hay que abrirlo y copiar su texto
@@ -540,6 +549,27 @@ const A = {
   },
   importClick: () => $('#importFile').click(),
 };
+// Lector de texto (Tesseract.js): se descarga solo la primera vez que se usa (~5 MB con el idioma).
+const loadOcr = () => window.Tesseract ? Promise.resolve() : new Promise((ok, ko) => {
+  const s = document.createElement('script');
+  s.src = 'https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js';
+  s.onload = ok; s.onerror = ko; document.head.append(s);
+});
+async function ocrImport(files) {
+  const msg = t => { const el = $('#ocrMsg'); if (el) el.textContent = t; };
+  try {
+    msg('Preparando el lector de texto… (la primera vez tarda un poco)');
+    await loadOcr();
+    const worker = await Tesseract.createWorker('spa');
+    let text = '';
+    for (const [i, f] of files.entries()) { msg(`Leyendo captura ${i + 1} de ${files.length}…`); text += (await worker.recognize(f)).data.text + '\n'; }
+    await worker.terminate();
+    $('#impText').value = text.trim();
+    const r = parseRoutine(text);
+    if (!r.rows.length) return msg('No he encontrado ejercicios en las capturas. Abajo tienes el texto leído: puedes corregirlo y pulsar "Leer rutina".');
+    imp = r; render();
+  } catch { msg('No se pudo leer la imagen. Comprueba la conexión (la primera vez hace falta internet) y vuelve a probar.'); }
+}
 async function importData(file) {
   try {
     const d = JSON.parse(await file.text());
@@ -618,6 +648,7 @@ document.addEventListener('change', e => {
   if (d.imp) { imp.rows[d.imp].pick = t.value; render(); }
   else if (d.setting) { S.rest = +t.value; save(); }
   else if (t.id === 'importFile' && t.files[0]) importData(t.files[0]);
+  else if (t.id === 'impImg' && t.files.length) ocrImport([...t.files]);
 });
 document.addEventListener('focusin', e => { if (e.target.dataset.f) e.target.select(); });
 
