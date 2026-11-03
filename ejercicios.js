@@ -1,6 +1,20 @@
 // Fotos en img/bN-0.jpg y bN-1.jpg (inicio y final): free-exercise-db, dominio público (Unlicense).
 // El orden fija los ids (b0, b1…) que guarda el historial: añade al final, nunca reordenes ni borres.
 const E = (name, muscle, main, sec, how, tip) => ({ name, muscle, main, sec, how, tip });
+// Nombres en inglés (mismo orden): sirven para reconocer el historial exportado de otras apps.
+const EN = ['Bench Press (Barbell)', 'Bench Press (Dumbbell)', 'Incline Bench Press (Barbell)', 'Incline Bench Press (Dumbbell)',
+  'Chest Fly (Dumbbell)', 'Cable Crossover Fly', 'Chest Press (Machine)', 'Chest Dip', 'Push Up', 'Pull Up', 'Lat Pulldown (Cable)',
+  'Bent Over Row (Barbell)', 'Single Arm Dumbbell Row', 'Seated Cable Row', 'Seated Row (Machine)', 'Deadlift (Barbell)',
+  'Straight Arm Pulldown (Cable)', 'Back Extension Hyperextension', 'Overhead Press (Barbell)', 'Shoulder Press (Dumbbell)',
+  'Shoulder Press (Machine)', 'Lateral Raise (Dumbbell)', 'Single Arm Lateral Raise (Cable)', 'Front Raise (Dumbbell)',
+  'Rear Delt Reverse Fly (Dumbbell)', 'Face Pull (Cable)', 'Shrug (Dumbbell)', 'Bicep Curl (Barbell)', 'Bicep Curl (Dumbbell)',
+  'Hammer Curl (Dumbbell)', 'Preacher Curl (Barbell)', 'Bicep Curl (Cable)', 'Triceps Pushdown (Cable)', 'Skullcrusher (Barbell)',
+  'Overhead Triceps Extension (Cable)', 'Close Grip Bench Press (Barbell)', 'Squat (Barbell)', 'Front Squat (Barbell)',
+  'Hack Squat (Machine)', 'Leg Press (Machine)', 'Lunge (Dumbbell)', 'Bulgarian Split Squat (Dumbbell)', 'Leg Extension (Machine)',
+  'Lying Leg Curl (Machine)', 'Seated Leg Curl (Machine)', 'Romanian Deadlift (Barbell)', 'Hip Thrust (Barbell)',
+  'Standing Calf Raise (Machine)', 'Seated Calf Raise (Machine)', 'Hip Abduction (Machine)', 'Hip Adduction (Machine)', 'Plank',
+  'Crunch', 'Cable Crunch', 'Hanging Leg Raise', 'Ab Wheel', 'Russian Twist', 'Calf Press on Leg Press (Machine)',
+  'Single Leg Extension (Machine)', 'Single Leg Press (Machine)', 'Single Leg Romanian Deadlift (Dumbbell)'];
 const LIB = [
   E('Press de banca (barra)', 'Pecho', ['Pecho'], ['Hombros (parte delantera)', 'Tríceps'], [
     'Túmbate en el banco con los ojos justo debajo de la barra y los pies bien apoyados en el suelo.',
@@ -368,4 +382,4 @@ const LIB = [
     'Baja hasta notar un buen estiramiento detrás del muslo de la pierna de apoyo, con la cadera mirando al suelo.',
     'Vuelve a subir apretando el glúteo. Termina la serie y cambia de pierna.'],
     'Si pierdes el equilibrio, apoya una mano en una pared o en un banco mientras aprendes.'),
-].map((e, i) => ({ id: 'b' + i, img: true, ...e }));
+].map((e, i) => ({ id: 'b' + i, img: true, en: EN[i], ...e }));
