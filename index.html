@@ -111,7 +111,7 @@ table{width:100%;border-collapse:collapse;font-size:15px}td{padding:4px 0}td:las
 <div id="reorder" hidden></div>
 <script src="ejercicios.js"></script>
 <script>
-const VERSION = 5; // súbelo junto con C en sw.js
+const VERSION = 6; // súbelo junto con C en sw.js
 const MUSCLES =['Pecho','Espalda','Hombros','Brazos','Piernas','Core'];
 const RESTS = Array.from({ length: 41 }, (_, i) => i * 15); // 0 a 10 min, de 15 en 15 s
 const RING = 119.38; // perímetro del anillo de descanso (2π·19)
@@ -259,19 +259,26 @@ function guessEx(name) {
 function parseRoutine(text) {
   const lines = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean), rows = [];
   let title = '';
-  // Tolerante con el texto leído de capturas: iconos sueltos y símbolos raros entre líneas.
-  const SETS = /^\W*(\d+)\s*(?:series?|sets?)\b\W*(.*)$/i, REST = /(?:descansa|descanso|rest)\b/i;
+  // Tolerante con el texto leído de capturas: las fotos se leen como letras sueltas al principio
+  // de la línea ("Ral 6 series", "af Elevación") y el descanso puede ir en la misma línea ("Imin Os").
+  const SETS = /(\d+)\s*(?:series?|sets?)\b\W*(.*)$/i, REST = /(?:descansa|descanso|rest)\b/i;
   const nameish = l => !SETS.test(l) && !REST.test(l) && (l.match(/[a-záéíóúñü]/gi) || []).length >= 4 && !/^(descargar|download)$/i.test(l);
   const prevName = i => { for (let k = i - 1; k >= 0 && k >= i - 3; k--) if (nameish(lines[k])) return k; return -1; };
+  const clean = l => l.replace(/^[^a-záéíóúñü]*(?:[a-z]{1,3}\b[^a-záéíóúñü]+)?/i, '').trim();
+  const restOf = l => {
+    const at = l.search(REST); if (at < 0) return null;
+    const t = l.slice(at).replace(/^\S+/, '').replace(/[Il|]/g, '1').replace(/[Oo]/g, '0'); // OCR: "Imin Os" = 1min 0s
+    const min = t.match(/(\d+)\s*min/i), sec = min ? t.slice(min.index + min[0].length).match(/(\d+)/) : t.match(/(\d+)\s*s/i);
+    return (min ? +min[1] * 60 : 0) + (sec ? +sec[1] : 0);
+  };
   lines.forEach((l, i) => {
     const m = l.match(SETS);
     const x = l.match(/^(.+?)\s+(\d+)\s*[x×]\s*(\d+(?:\s*-\s*\d+)?)\b/i); // "Press banca 4x8-10"
     const k = m ? prevName(i) : -1;
     if (k >= 0) {
-      const restLine = lines[i + 1] || '', rm = REST.test(restLine);
-      const rest = rm ? (+(restLine.match(/(\d+)\s*min/i)?.[1] || 0)) * 60 + (+(restLine.match(/(\d+)\s*s\b/i)?.[1] || 0)) : S.rest;
-      if (!rows.length) { const t = prevName(k); if (t >= 0) title = lines[t]; }
-      rows.push({ src: lines[k].replace(/^\W+/, ''), sets: +m[1], reps: m[2].replace(/\s*(repeticiones|reps?)\b.*/i, '').replace(/[^\d-]/g, ''), rest });
+      const rest = restOf(l) ?? restOf(lines[i + 1] || '') ?? S.rest;
+      if (!rows.length) { const t = prevName(k); if (t >= 0) title = clean(lines[t]); }
+      rows.push({ src: clean(lines[k]), sets: +m[1], reps: m[2].replace(/\s*(repeticiones|reps?)\b.*/i, '').replace(/[^\d-]/g, ''), rest });
     } else if (x && !m) rows.push({ src: x[1], sets: +x[2], reps: x[3].replace(/\s/g, ''), rest: S.rest });
   });
   rows.forEach(r => { const g = guessEx(r.src); r.pick = g.score >= .34 ? g.id : 'new'; });
