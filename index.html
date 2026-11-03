@@ -37,9 +37,18 @@ button,input,select{font:inherit;color:inherit}
 .bars{display:flex;flex-direction:column;gap:8px;margin:12px 0 8px}
 .bar-row{display:grid;grid-template-columns:minmax(0,1.5fr) 1.4fr 40px;gap:10px;align-items:center;font-size:14px;line-height:1.2}.bar-row b{text-align:right;font-variant-numeric:tabular-nums}
 .bar{height:10px;background:var(--bg);border-radius:999px;overflow:hidden}.bar i{display:block;height:100%;background:var(--acc);border-radius:999px}
-.rest{display:inline-flex;align-items:center;gap:4px;font-size:14px;color:var(--mut);background:var(--bg);border:1px solid var(--line);border-radius:999px;padding:2px;margin-top:6px}
-.rest b{min-width:64px;text-align:center;color:var(--txt);font-variant-numeric:tabular-nums}
-.rest button{width:30px;height:30px;border-radius:50%;border:0;background:var(--card);font-size:18px;cursor:pointer}
+.restchip{display:inline-flex;align-items:center;gap:6px;background:var(--bg);border:1px solid var(--line);border-radius:999px;padding:8px 14px;margin-top:6px;font-size:14px;cursor:pointer;color:var(--txt)}
+#wheel{position:fixed;inset:0;z-index:9;background:rgba(0,0,0,.6);display:flex;align-items:flex-end}#wheel[hidden]{display:none}
+#wheel .in{background:var(--card);width:100%;max-width:640px;margin:0 auto;border-radius:22px 22px 0 0;padding:10px 16px calc(16px + env(safe-area-inset-bottom));text-align:center;animation:sheetup .3s cubic-bezier(.2,.9,.25,1)}
+@keyframes sheetup{from{transform:translateY(100%)}}
+.handle{width:44px;height:5px;border-radius:3px;background:var(--line);margin:0 auto 12px}
+.wheel{position:relative;height:220px;margin:14px 0 8px;perspective:500px}
+.wsel{position:absolute;left:0;right:0;top:88px;height:44px;border-radius:12px;background:var(--bg);border:1px solid var(--line)}
+.wlist{position:relative;height:220px;overflow-y:scroll;scroll-snap-type:y mandatory;padding:88px 0;scrollbar-width:none;overscroll-behavior:contain;
+  -webkit-mask-image:linear-gradient(transparent,#000 35%,#000 65%,transparent);mask-image:linear-gradient(transparent,#000 35%,#000 65%,transparent)}
+.wlist::-webkit-scrollbar{display:none}
+.wi{height:44px;display:grid;place-items:center;scroll-snap-align:center;font-size:22px;font-variant-numeric:tabular-nums;cursor:pointer;color:var(--mut)}
+.wi.on{color:var(--acc);font-weight:700}
 .sh,.set{display:grid;grid-template-columns:36px 1fr 72px 64px 44px;gap:6px;align-items:center;text-align:center}
 .sh{font-size:12px;color:var(--mut);margin:10px 0 4px}
 .set{padding:4px 0;border-radius:10px}.set.done{background:rgba(47,191,113,.14)}
@@ -119,9 +128,13 @@ table{width:100%;border-collapse:collapse;font-size:15px}td{padding:4px 0}td:las
 <div id="sheet" hidden></div>
 <div id="toast"></div>
 <div id="reorder" hidden></div>
+<div id="wheel" hidden><div class="in" role="dialog" aria-label="Temporizador de descanso"><div class="handle"></div>
+  <h3>Temporizador de descanso</h3><small id="wheelEx"></small>
+  <div class="wheel"><div class="wsel"></div><div class="wlist" id="wlist" tabindex="0"></div></div>
+  <button class="btn wide" data-a="wheelDone">Listo</button></div></div>
 <script src="ejercicios.js"></script>
 <script>
-const VERSION = 10; // súbelo junto con C en sw.js
+const VERSION = 11; // súbelo junto con C en sw.js
 const MUSCLES =['Pecho','Espalda','Hombros','Brazos','Piernas','Core'];
 const RESTS = Array.from({ length: 41 }, (_, i) => i * 15); // 0 a 10 min, de 15 en 15 s
 const RING = 119.38; // perímetro del anillo de descanso (2π·19)
@@ -181,7 +194,7 @@ function go(p, extra = {}) {
   V = { p, tab: TABS.includes(p) ? p : V.tab, ...extra };
   scrollTo(0, 0); render();
 }
-addEventListener('popstate', () => { if (picker) { picker = null; renderSheet(); } else if (!TABS.includes(V.p)) { V = { p: V.tab, tab: V.tab }; render(); } });
+addEventListener('popstate', () => { if (wheel) closeWheel(); else if (picker) { picker = null; renderSheet(); } else if (!TABS.includes(V.p)) { V = { p: V.tab, tab: V.tab }; render(); } });
 
 function render() {
   const pages = { entreno: pEntreno, historial: pHistorial, ejercicios: pEjercicios, ajustes: pAjustes, rutina: pRutina, rutinaVer: pRutinaVer, importar: pImportar, importarHist: pImportarHist, cuerpo: pCuerpo, discos: pDiscos, workout: pWorkout, ejercicio: pEjercicio };
@@ -239,8 +252,8 @@ function exCard(it, i) {
 }
 const thumb = e => e.img ? `<img class="thumb" src="img/${e.id}-0.jpg" alt="" loading="lazy">` : `<span class="thumb ph">${esc((e.name || '?')[0])}</span>`;
 const restTxt = s => !s ? 'sin descanso' : s < 60 ? `${s} s` : `${Math.floor(s / 60)} min${s % 60 ? ` ${s % 60} s` : ''}`;
-const restStepper = (a, i, v) => `<div class="rest"><small>⏱ Descanso</small>
-  <button data-a="${a}" data-i="${i}" data-d="-15" aria-label="Menos descanso">−</button><b>${v ? clock(v) : 'Sin'}</b><button data-a="${a}" data-i="${i}" data-d="15" aria-label="Más descanso">+</button></div>`;
+// mode: 'restStep' = ejercicio del entreno en curso, 'rtRest' = ejercicio del editor de rutinas
+const restStepper = (mode, i, v) => `<button class="restchip" data-a="restPick" data-m="${mode}" data-i="${i}">⏱ Descanso: <b>${v ? restTxt(v) : 'sin descanso'}</b></button>`;
 // Cada serie cuenta 1 para los músculos principales y 0,5 para los secundarios.
 function muscleShare(items) {
   const t = {};
@@ -616,6 +629,45 @@ function restUpdate() {
 (function frame() { restUpdate(); requestAnimationFrame(frame); })();
 function updStats() { const a = S.active; if ($('#vol')) { $('#vol').textContent = fmtKg(vol(a)); $('#nsets').textContent = nsets(a); } }
 
+// --- rueda de descanso: de 15 en 15 s; la lista se repite varias veces y se recoloca
+// en la copia del medio al parar, así nunca se llega al final ---
+const WH = 44, WN = RESTS.length, WCOPIES = 7, WMID = 3;
+let wheel = null, wheelT = null; // { mode, i, v }
+const wl = () => $('#wlist');
+function openWheel(mode, i) {
+  const it = (mode === 'restStep' ? S.active.items : draft.items)[i];
+  const v = Math.min(600, Math.round((it.rest ?? S.rest) / 15) * 15);
+  wheel = { mode, i, v };
+  $('#wheelEx').textContent = ex(it.exId).name;
+  wl().innerHTML = Array.from({ length: WN * WCOPIES }, (_, k) => `<div class="wi" data-k="${k}">${RESTS[k % WN] ? restTxt(RESTS[k % WN]) : 'Sin descanso'}</div>`).join('');
+  $('#wheel').hidden = false;
+  wl().scrollTop = (WMID * WN + RESTS.indexOf(v)) * WH;
+  wheelPaint();
+  history.pushState(null, '');
+}
+function closeWheel() { wheel = null; $('#wheel').hidden = true; render(); }
+function wheelPaint() {
+  const el = wl(), pos = el.scrollTop / WH, k = Math.round(pos);
+  for (let j = Math.max(0, k - 4); j <= k + 4 && j < el.children.length; j++) { // solo las filas visibles
+    const d = j - pos, c = el.children[j];
+    c.style.transform = `rotateX(${-d * 20}deg) scale(${1 - Math.min(Math.abs(d), 3) * .06})`;
+    c.style.opacity = Math.max(.15, 1 - Math.abs(d) * .3);
+    c.classList.toggle('on', j === k);
+  }
+  const v = RESTS[k % WN];
+  if (wheel && v !== wheel.v) { wheel.v = v; navigator.vibrate?.(4); }
+}
+wl().addEventListener('scroll', () => {
+  wheelPaint(); // el navegador ya agrupa los eventos de scroll por fotograma
+  clearTimeout(wheelT);
+  wheelT = setTimeout(() => { // al parar, volver a la copia del medio sin que se note
+    const el = wl(), k = Math.round(el.scrollTop / WH);
+    if (k < WN * 2 || k >= WN * 5) { el.scrollTop = (WMID * WN + k % WN) * WH; wheelPaint(); }
+  }, 160);
+}, { passive: true });
+wl().addEventListener('click', e => { const it = e.target.closest('.wi'); if (it) wl().scrollTo({ top: +it.dataset.k * WH, behavior: 'smooth' }); });
+$('#wheel').addEventListener('click', e => { if (e.target.id === 'wheel') history.back(); }); // tocar fuera: cancelar
+
 // --- acciones ---
 function startWorkout(name, items) {
   if (S.active && !confirm('Ya tienes un entreno en curso. ¿Descartarlo y empezar otro?')) return;
@@ -632,8 +684,8 @@ const A = {
   asRoutine: d => { const w = S.workouts.find(x => x.id === d.id); draft = { name: w.name, items: w.items.map(it => ({ exId: it.exId, sets: it.sets.length, ...(it.ss && { ss: it.ss }) })) }; go('rutina', { tab: 'entreno' }); },
   rtSets: d => { const it = draft.items[d.i]; it.sets = Math.max(1, it.sets + +d.d); render(); },
   rtRm: d => { draft.items.splice(d.i, 1); render(); },
-  rtRest: d => { const it = draft.items[d.i]; it.rest = Math.max(0, Math.min(600, (it.rest ?? S.rest) + +d.d)); render(); },
-  restStep: d => { const it = S.active.items[d.i]; it.rest = Math.max(0, Math.min(600, it.rest + +d.d)); save(); render(); },
+  restPick: d => openWheel(d.m, +d.i),
+  wheelDone: () => { const list = wheel.mode === 'restStep' ? S.active.items : draft.items; list[wheel.i].rest = wheel.v; if (wheel.mode === 'restStep') save(); history.back(); },
   viewRoutine: d => go('rutinaVer', { id: d.id, tab: 'entreno' }),
   importStart: () => { imp = null; go('importar', { tab: 'entreno' }); },
   importImgPick: () => $('#impImg').click(),
