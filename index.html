@@ -61,6 +61,16 @@ button,input,select{font:inherit;color:inherit}
 .mi{display:flex;gap:14px;align-items:center;width:100%;background:var(--bg);border:0;border-bottom:1px solid var(--line);padding:15px 16px;font-size:17px;text-align:left;color:var(--txt);cursor:pointer}
 #menuBody>.mi:first-child{border-radius:14px 14px 0 0}#menuBody>.mi:last-of-type{border-radius:0 0 14px 14px;border-bottom:0}
 .mi span{width:26px;text-align:center;flex:none}.mi.danger{color:var(--bad)}
+.tiles{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:8px 0}
+.tile{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px 14px;text-align:left;font-size:16px;font-weight:600;cursor:pointer;color:var(--txt)}
+.folder{margin:6px 0 14px}
+.fhead{background:none;border:0;color:var(--mut);font-size:15px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;padding:10px 0;cursor:pointer;text-align:left}
+.clamp{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.avatar{width:84px;height:84px;border-radius:50%;border:2px solid var(--line);background:var(--bg);font-size:36px;flex:none;overflow:hidden;padding:0;cursor:pointer}
+.avatar img{width:100%;height:100%;object-fit:cover}
+.cal{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;text-align:center;margin-top:12px}
+.day{aspect-ratio:1;display:grid;place-items:center;border-radius:50%;font-size:15px;border:0;background:none;color:var(--txt)}
+.day.on{background:var(--acc);color:#111;font-weight:800;cursor:pointer}.day.today{outline:2px solid var(--acc)}
 .rpegrid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:8px 0}.rpegrid .chip{padding:12px;font-size:17px}
 .sh{font-size:12px;color:var(--mut);margin:10px 0 4px}
 .set{padding:4px 0;border-radius:10px}.set.done{background:rgba(47,191,113,.14)}
@@ -132,10 +142,9 @@ table{width:100%;border-collapse:collapse;font-size:15px}td{padding:4px 0}td:las
   <div class="rinfo"><small>Descanso</small><span id="restclock"></span></div>
   <button class="btn ghost sm" data-a="restAdj" data-d="-15">−15</button><button class="btn ghost sm" data-a="restAdj" data-d="15">+15</button><button class="btn sm" data-a="restSkip">Saltar</button></div>
 <nav>
-  <button data-tab="entreno"><b>🏋</b>Entrenar</button>
-  <button data-tab="historial"><b>🗓</b>Historial</button>
-  <button data-tab="ejercicios"><b>📈</b>Ejercicios</button>
-  <button data-tab="cuerpo"><b>⚖️</b>Cuerpo</button>
+  <button data-tab="inicio"><b>🏠</b>Inicio</button>
+  <button data-tab="entreno"><b>🏋</b>Entrenamiento</button>
+  <button data-tab="perfil"><b>👤</b>Perfil</button>
 </nav>
 <div id="sheet" hidden></div>
 <div id="toast"></div>
@@ -147,11 +156,11 @@ table{width:100%;border-collapse:collapse;font-size:15px}td{padding:4px 0}td:las
   <button class="btn wide" data-a="wheelDone">Listo</button></div></div>
 <script src="ejercicios.js"></script>
 <script>
-const VERSION = 12; // súbelo junto con C en sw.js
+const VERSION = 13; // súbelo junto con C en sw.js
 const MUSCLES =['Pecho','Espalda','Hombros','Brazos','Piernas','Core'];
 const RESTS = Array.from({ length: 41 }, (_, i) => i * 15); // 0 a 10 min, de 15 en 15 s
 const RING = 119.38; // perímetro del anillo de descanso (2π·19)
-const TABS = ['entreno','historial','ejercicios','cuerpo','ajustes'];
+const TABS = ['inicio','entreno','perfil','ajustes'];
 const SET_TYPES = ['', 'w', 'f', 'd']; // normal, calentamiento, fallo, drop set
 const work = sets => sets.filter(s => s.t !== 'w'); // las de calentamiento no cuentan para récords
 
@@ -168,7 +177,7 @@ const fdur = ms => { const m = Math.round(ms / 60000); return m >= 60 ? `${Math.
 
 // --- datos (solo en este dispositivo) ---
 const KEY = 'forja-v1';
-const defaults = () => ({ custom: [], routines: [], workouts: [], active: null, rest: 90, alias: {}, notes: {}, body: [] });
+const defaults = () => ({ custom: [], routines: [], workouts: [], active: null, rest: 90, alias: {}, notes: {}, body: [], folders: [], profile: { name: '', photo: '' } });
 // alias: nombre importado → id de ejercicio · notes: nota fija por ejercicio · body: [{ t, peso, grasa, cintura… }]
 function load() {
   const raw = localStorage.getItem(KEY);
@@ -200,7 +209,7 @@ function linkSS(list, i) {
 }
 
 // --- navegación ---
-let V = { p: 'entreno', tab: 'entreno' }, draft = null, picker = null;
+let V = S.active ? { p: 'entreno', tab: 'entreno' } : { p: 'inicio', tab: 'inicio' }, draft = null, picker = null;
 const F = { lib: { q: '', m: '' }, pick: { q: '', m: '' } };
 function go(p, extra = {}) {
   if (!TABS.includes(p)) history.pushState(null, '');
@@ -210,7 +219,7 @@ function go(p, extra = {}) {
 addEventListener('popstate', () => { if (menu) closeMenu(); else if (wheel) closeWheel(); else if (picker) { picker = null; renderSheet(); } else if (!TABS.includes(V.p)) { V = { p: V.tab, tab: V.tab }; render(); } });
 
 function render() {
-  const pages = { entreno: pEntreno, historial: pHistorial, ejercicios: pEjercicios, ajustes: pAjustes, rutina: pRutina, rutinaVer: pRutinaVer, importar: pImportar, importarHist: pImportarHist, cuerpo: pCuerpo, discos: pDiscos, workout: pWorkout, ejercicio: pEjercicio };
+  const pages = { inicio: pInicio, perfil: pPerfil, stats: pStats, calendario: pCalendario, entreno: pEntreno, ejercicios: pEjercicios, ajustes: pAjustes, rutina: pRutina, rutinaVer: pRutinaVer, importar: pImportar, importarHist: pImportarHist, cuerpo: pCuerpo, discos: pDiscos, workout: pWorkout, ejercicio: pEjercicio };
   const [title, html] = pages[V.p]();
   $('#title').textContent = title;
   $('#finishBtn').hidden = !(S.active && V.p === 'entreno');
@@ -223,14 +232,25 @@ function toast(msg) { const t = $('#toast'); t.textContent = msg; t.classList.ad
 // --- páginas ---
 function pEntreno() {
   const a = S.active;
-  if (!a) return ['Entrenar', `
-    <button class="btn big" data-a="startEmpty">+ Empezar entreno vacío</button>
-    <div class="row between"><h2>Rutinas</h2><span class="row"><button class="btn ghost sm" data-a="importStart">Importar</button><button class="btn ghost sm" data-a="newRoutine">+ Nueva</button></span></div>
-    ${S.routines.map(r => `<div class="card">
-      <div class="tap" data-a="viewRoutine" data-id="${r.id}"><div class="row between"><b>${esc(r.name)}</b><span class="grip">›</span></div>
-      <p class="muted">${esc(r.items.map(it => ex(it.exId).name).join(', '))}</p></div>
-      <button class="btn wide" data-a="startRoutine" data-id="${r.id}">Empezar</button></div>`).join('')
-      || '<p class="muted">Aún no tienes rutinas. Crea una o guarda un entreno terminado como rutina.</p>'}`];
+  if (!a) {
+    const rCard = r => `<div class="card">
+      <div class="row between"><b class="tap" style="flex:1" data-a="viewRoutine" data-id="${r.id}">${esc(r.name)}</b>
+        <button class="icon dots" data-a="routineMenu" data-id="${r.id}" aria-label="Opciones de la rutina">⋮</button></div>
+      <p class="muted tap clamp" data-a="viewRoutine" data-id="${r.id}">${esc(r.items.map(it => ex(it.exId).name).join(', '))}</p>
+      <button class="btn wide" data-a="startRoutine" data-id="${r.id}">Empezar rutina</button></div>`;
+    const loose = S.routines.filter(r => !S.folders.some(f => f.id === r.folder));
+    return ['Entrenamiento', `
+      <button class="btn big" data-a="startEmpty">+ Empezar entreno vacío</button>
+      <h2>Rutinas</h2>
+      <div class="tiles"><button class="tile" data-a="newRoutine">📋 Nueva rutina</button><button class="tile" data-a="newFolder">📁 Nueva carpeta</button>
+        <button class="tile" data-a="importStart">📥 Importar rutina</button></div>
+      ${S.folders.map(f => { const rs = S.routines.filter(r => r.folder === f.id); return `<div class="folder">
+        <div class="row between"><button class="fhead" data-a="folderToggle" data-id="${f.id}" aria-expanded="${!f.closed}">${f.closed ? '▸' : '▾'} ${esc(f.name)} <small>(${rs.length})</small></button>
+          <button class="icon dots" data-a="folderMenu" data-id="${f.id}" aria-label="Opciones de la carpeta">⋮</button></div>
+        ${f.closed ? '' : rs.map(rCard).join('') || '<p class="muted">Carpeta vacía. Mueve rutinas aquí desde su menú ⋮.</p>'}</div>`; }).join('')}
+      ${loose.length ? (S.folders.length ? `<div class="fhead">Mis rutinas <small>(${loose.length})</small></div>` : '') + loose.map(rCard).join('') : ''}
+      ${S.routines.length ? '' : '<p class="muted">Aún no tienes rutinas. Crea una, impórtala o guarda un entreno terminado como rutina.</p>'}`];
+  }
   return ['Entreno en curso', `
     <div class="card">
       <input class="title-in" data-w="name" value="${esc(a.name)}" aria-label="Nombre del entreno">
@@ -396,23 +416,78 @@ function pRutina() {
     ${draft.id ? '<button class="btn danger wide" data-a="delRoutine">Eliminar rutina</button>' : ''}
     <button class="btn ghost wide" data-tab="entreno">Cancelar</button>`];
 }
-function pHistorial() {
-  const week = S.workouts.filter(w => w.start > Date.now() - 7 * 864e5);
-  return ['Historial', `
+// Récords por entreno: ejercicios cuyo 1RM estimado supera todo lo anterior (el primer día de un ejercicio no cuenta).
+function prCounts() {
+  const best = {}, out = {};
+  for (const w of S.workouts.slice().reverse()) {
+    let n = 0;
+    for (const it of w.items) {
+      const m = Math.max(0, ...work(it.sets).map(e1rm));
+      if (best[it.exId] > 0 && m > best[it.exId]) n++;
+      best[it.exId] = Math.max(best[it.exId] || 0, m);
+    }
+    out[w.id] = n;
+  }
+  return out;
+}
+const feedCard = (w, prs) => `<div class="card tap" data-a="openW" data-id="${w.id}">
+  <div class="row between"><b>${esc(w.name)}</b><small>${fdate(w.start)}</small></div>
+  <div class="stats" style="margin:8px 0"><div><small>Tiempo</small><b>${fdur(w.end - w.start)}</b></div><div><small>Volumen</small><b>${fmtKg(vol(w))}</b></div>
+    <div><small>Récords</small><b>${prs ? `🏅 ${prs}` : '—'}</b></div></div>
+  <div class="exrows">${w.items.slice(0, 3).map(it => `<div class="row">${thumb(ex(it.exId))}<span>${it.sets.length} series · ${esc(ex(it.exId).name)}</span></div>`).join('')}
+  ${w.items.length > 3 ? `<small>Ver ${w.items.length - 3} ejercicio${w.items.length - 3 > 1 ? 's' : ''} más</small>` : ''}</div></div>`;
+function pInicio() {
+  const prs = prCounts(), week = S.workouts.filter(w => w.start > Date.now() - 7 * 864e5);
+  return ['Inicio', `
     <div class="card stats"><div><small>Últimos 7 días</small><b>${week.length} entrenos</b></div><div><small>Volumen 7 días</small><b>${fmtKg(week.reduce((t, w) => t + vol(w), 0))}</b></div></div>
-    ${S.workouts.length ? weeklyChart() + muscleBars(S.workouts.filter(w => w.start > Date.now() - 30 * 864e5)
-      .flatMap(w => w.items.map(it => ({ exId: it.exId, n: work(it.sets).length }))), 'Músculos · últimos 30 días') : ''}
-    ${S.workouts.length ? '<h2>Entrenos</h2>' : ''}
-    ${S.workouts.map(w => `<div class="card tap" data-a="openW" data-id="${w.id}">
-      <div class="row between"><b>${esc(w.name)}</b><small>${fdate(w.start)}</small></div>
-      <div class="mini"><span>⏱ ${fdur(w.end - w.start)}</span><span>${fmtKg(vol(w))}</span><span>${nsets(w)} series</span></div>
-      <div class="exrows">${w.items.slice(0, 4).map(it => `<div class="row">${thumb(ex(it.exId))}<span>${it.sets.length} series · ${esc(ex(it.exId).name)}</span></div>`).join('')}
-      ${w.items.length > 4 ? `<small>+ ${w.items.length - 4} ejercicios más</small>` : ''}</div></div>`).join('')
-      || '<p class="muted">Aún no hay entrenos terminados.</p>'}`];
+    ${S.workouts.map(w => feedCard(w, prs[w.id])).join('')
+      || '<p class="muted">Aún no hay entrenos. Empieza uno en la pestaña Entrenamiento.</p>'}`];
+}
+let pMetric = 'dur';
+function pPerfil() {
+  const p = S.profile, prs = prCounts(), total = Object.values(prs).reduce((a, b) => a + b, 0);
+  return [p.name || 'Perfil', `
+    <div class="card row" style="gap:16px">
+      <button class="avatar" data-a="photoPick" aria-label="Cambiar foto de perfil">${p.photo ? `<img src="${p.photo}" alt="">` : '👤'}</button>
+      <input type="file" id="photoFile" accept="image/*" hidden>
+      <div style="flex:1;min-width:0"><div class="row between"><b style="font-size:20px">${esc(p.name || 'Tu nombre')}</b>
+        <button class="icon" data-a="nameEdit" aria-label="Cambiar nombre">✎</button></div>
+        <div class="stats" style="margin-top:6px"><div><small>Entrenos</small><b>${S.workouts.length}</b></div><div><small>Récords</small><b>${total}</b></div></div></div></div>
+    ${weeklyChart(pMetric, true)}
+    <h2>Información</h2>
+    <div class="tiles"><button class="tile" data-a="goSub" data-p="stats">📈 Estadísticas</button><button class="tile" data-a="goSub" data-p="ejercicios">🏋 Ejercicios</button>
+      <button class="tile" data-a="goSub" data-p="cuerpo">⚖️ Medidas</button><button class="tile" data-a="goSub" data-p="calendario">📅 Calendario</button></div>
+    <h2>Entrenamientos</h2>
+    ${S.workouts.slice(0, 3).map(w => feedCard(w, prs[w.id])).join('') || '<p class="muted">Aún no hay entrenos.</p>'}
+    ${S.workouts.length > 3 ? '<button class="btn ghost wide" data-tab="inicio">Ver todos</button>' : ''}`];
+}
+function pStats() {
+  const ws = S.workouts, hours = ws.reduce((t, w) => t + (w.end - w.start), 0) / 3.6e6;
+  return ['Estadísticas', `
+    <div class="card stats"><div><small>Entrenos</small><b>${ws.length}</b></div><div><small>Horas</small><b>${fmt(hours)}</b></div>
+      <div><small>Volumen total</small><b>${fmtKg(ws.reduce((t, w) => t + vol(w), 0))}</b></div></div>
+    ${ws.length ? weeklyChart('vol') + muscleBars(ws.filter(w => w.start > Date.now() - 30 * 864e5)
+      .flatMap(w => w.items.map(it => ({ exId: it.exId, n: work(it.sets).length }))), 'Músculos · últimos 30 días') : '<p class="muted">Aún no hay datos.</p>'}`];
+}
+let calM = null; // primer día del mes que se muestra
+function pCalendario() {
+  const now = new Date(); calM ??= new Date(now.getFullYear(), now.getMonth(), 1);
+  const y = calM.getFullYear(), m = calM.getMonth(), first = (calM.getDay() + 6) % 7, days = new Date(y, m + 1, 0).getDate(), byDay = {};
+  S.workouts.forEach(w => { const d = new Date(w.start); if (d.getFullYear() === y && d.getMonth() === m) (byDay[d.getDate()] ??= []).push(w); });
+  const isToday = d => y === now.getFullYear() && m === now.getMonth() && d === now.getDate();
+  const cells = Array(first).fill('<span></span>').concat(Array.from({ length: days }, (_, i) => { const ws = byDay[i + 1];
+    return ws ? `<button class="day on" data-a="openW" data-id="${ws[0].id}" aria-label="${i + 1}: ${esc(ws.map(w => w.name).join(', '))}">${i + 1}</button>`
+      : `<span class="day ${isToday(i + 1) ? 'today' : ''}">${i + 1}</span>`; }));
+  return ['Calendario', `
+    <div class="card"><div class="row between"><button class="icon" data-a="calMove" data-d="-1" aria-label="Mes anterior">‹</button>
+      <b style="text-transform:capitalize">${calM.toLocaleDateString('es', { month: 'long', year: 'numeric' })}</b>
+      <button class="icon" data-a="calMove" data-d="1" aria-label="Mes siguiente">›</button></div>
+      <div class="cal">${['L', 'M', 'X', 'J', 'V', 'S', 'D'].map(d => `<small>${d}</small>`).join('')}${cells.join('')}</div>
+      <p class="muted">${Object.values(byDay).flat().length} entrenos este mes · toca un día para verlo</p></div>`];
 }
 function pWorkout() {
   const w = S.workouts.find(x => x.id === V.id);
-  if (!w) { V = { p: 'historial', tab: 'historial' }; return pHistorial(); }
+  if (!w) { V = { p: 'inicio', tab: 'inicio' }; return pInicio(); }
   return [w.name, `
     <div class="card"><small>${new Date(w.start).toLocaleString('es', { dateStyle: 'full', timeStyle: 'short' })}</small>
       <div class="stats" style="margin-top:8px"><div><small>Duración</small><b>${fdur(w.end - w.start)}</b></div><div><small>Volumen</small><b>${fmtKg(vol(w))}</b></div><div><small>Series</small><b>${nsets(w)}</b></div></div></div>
@@ -519,7 +594,7 @@ function pCuerpo() {
   const list = S.body.slice().sort((a, b) => a.t - b.t), pts = list.filter(x => x[bodyM] != null);
   const last = pts.at(-1), month = pts.filter(x => x.t <= Date.now() - 30 * 864e5).at(-1);
   const [, label, unit] = BODY.find(b => b[0] === bodyM);
-  return ['Cuerpo', `
+  return ['Medidas', `
     <div class="card"><h3>Nuevo registro</h3>
       <label><small>Fecha</small><input class="field" type="date" id="bDate" value="${today()}"></label>
       <div class="grid2">${BODY.map(([k, l, u]) => `<label><small>${l} (${u})</small><input class="field" inputmode="decimal" id="b_${k}" placeholder="—"></label>`).join('')}</div>
@@ -535,15 +610,26 @@ function pCuerpo() {
       <button class="icon" data-a="bodyDel" data-t="${x.t}" aria-label="Borrar registro">✕</button></div>`).join('') || '<p class="muted">Sin registros.</p>'}`];
 }
 
-// --- volumen por semana (últimas 12) ---
-function weeklyChart() {
+// --- gráfica por semana (últimas 12 ≈ 3 meses): duración, volumen o repeticiones ---
+const METRICS = {
+  dur: ['Duración', w => (w.end - w.start) / 3.6e6, v => v >= 1 ? `${fmt(v)} h` : `${Math.round(v * 60)} min`],
+  vol: ['Volumen', vol, fmtKg],
+  reps: ['Repeticiones', w => w.items.reduce((t, it) => t + work(it.sets).reduce((u, s) => u + (+s.reps || 0), 0), 0), v => `${Math.round(v)} reps`],
+};
+function weeklyChart(metric = 'vol', chips = false) {
+  const [label, of, show] = METRICS[metric];
   const d = new Date(); d.setHours(0, 0, 0, 0); d.setDate(d.getDate() - (d.getDay() + 6) % 7); // lunes de esta semana
   const weeks = Array.from({ length: 12 }, (_, i) => d.getTime() - (11 - i) * 7 * 864e5);
-  const vals = weeks.map(s => S.workouts.filter(w => w.start >= s && w.start < s + 7 * 864e5).reduce((t, w) => t + vol(w), 0));
-  const mx = Math.max(...vals, 1), W = 320, H = 140, bw = (W - 20) / 12;
-  return `<div class="card"><h3>Volumen por semana</h3><svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="Volumen por semana de las últimas 12 semanas">
-    ${vals.map((v, i) => { const h = (H - 34) * v / mx; return `<rect x="${10 + i * bw + 2}" y="${H - 18 - h}" width="${bw - 4}" height="${h}" rx="3" fill="var(--acc)" opacity="${i === 11 ? 1 : .6}"><title>${fmtKg(v)}</title></rect>`; }).join('')}
-    <text x="10" y="12" class="ct">${fmtKg(mx)}</text><text x="10" y="${H - 4}" class="ct">hace 12 semanas</text><text x="${W - 10}" y="${H - 4}" class="ct" text-anchor="end">esta semana</text></svg></div>`;
+  const vals = weeks.map(s => S.workouts.filter(w => w.start >= s && w.start < s + 7 * 864e5).reduce((t, w) => t + of(w), 0));
+  const mx = Math.max(...vals, metric === 'dur' ? .5 : 1), W = 320, H = 150, bw = (W - 20) / 12;
+  const day = t => new Date(t).toLocaleDateString('es', { day: 'numeric', month: 'short' });
+  return `<div class="card"><div class="row between"><h3>${label} por semana</h3><small>Últimos 3 meses</small></div>
+    <p style="margin:6px 0"><b>${show(vals[11])}</b> <small>esta semana</small></p>
+    <svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="${label} por semana de las últimas 12 semanas">
+    ${vals.map((v, i) => { const h = (H - 36) * v / mx; return `<rect x="${10 + i * bw + 2}" y="${H - 18 - h}" width="${bw - 4}" height="${h}" rx="3" fill="var(--acc)" opacity="${i === 11 ? 1 : .6}"><title>${day(weeks[i])}: ${show(v)}</title></rect>`; }).join('')}
+    <text x="10" y="12" class="ct">${show(mx)}</text>${[0, 4, 8].map(i => `<text x="${10 + i * bw + 2}" y="${H - 4}" class="ct">${day(weeks[i])}</text>`).join('')}
+    <text x="${W - 10}" y="${H - 4}" class="ct" text-anchor="end">esta sem.</text></svg>
+    ${chips ? `<div class="chips">${Object.entries(METRICS).map(([k, [l]]) => `<button class="chip ${k === metric ? 'on' : ''}" data-a="pMetric" data-k="${k}">${l}</button>`).join('')}</div>` : ''}</div>`;
 }
 
 // --- importar historial exportado de Hevy (CSV: title, start_time, exercise_title, set_type, weight_kg, reps…) ---
@@ -699,6 +785,16 @@ const mItem = (icon, label, mi, attrs = '', cls = '') => `<button class="mi ${cl
 const reorderHtml = () => S.active.items.map((it, k, l) => `<div class="mi"><span>${k + 1}</span><b style="flex:1;font-weight:500">${esc(ex(it.exId).name)}</b>
   <button class="icon" data-a="moveEx" data-i="${k}" data-d="-1" ${k ? '' : 'disabled'} aria-label="Subir">↑</button><button class="icon" data-a="moveEx" data-i="${k}" data-d="1" ${k < l.length - 1 ? '' : 'disabled'} aria-label="Bajar">↓</button></div>`).join('')
   + `<button class="btn wide" data-mi="done">Listo</button>`;
+function newFolder() {
+  const name = prompt('Nombre de la carpeta (ej. Fuerza, Verano…)')?.trim();
+  if (!name) return null;
+  const f = { id: uid(), name }; S.folders.push(f); save(); return f;
+}
+async function setPhoto(file) { // recorte cuadrado de 256 px para que ocupe poco
+  const img = await createImageBitmap(file), s = 256, k = Math.max(s / img.width, s / img.height), c = document.createElement('canvas');
+  c.width = c.height = s; c.getContext('2d').drawImage(img, (s - img.width * k) / 2, (s - img.height * k) / 2, img.width * k, img.height * k);
+  S.profile.photo = c.toDataURL('image/jpeg', .8); save(); render();
+}
 const MENU = {
   done: () => render(),
   reorder: () => openMenu('Reordenar ejercicios', reorderHtml()),
@@ -715,6 +811,16 @@ const MENU = {
   delset: d => { S.active.items[d.i].sets.splice(d.j, 1); save(); render(); },
   rpe: d => { const s = S.active.items[d.i].sets[d.j]; if (d.v) s.rpe = +d.v; else delete s.rpe; save(); render(); },
   save: () => A.finish(),
+  rEdit: d => A.editRoutine(d),
+  rDup: d => { const r = S.routines.find(x => x.id === d.id); S.routines.push({ ...structuredClone(r), id: uid(), name: r.name + ' (copia)' }); save(); render(); toast('Rutina duplicada'); },
+  rMove: d => openMenu('Mover a carpeta', S.folders.map(f => mItem('📁', esc(f.name), 'rMoveTo', `data-id="${d.id}" data-f="${f.id}"`)).join('')
+    + mItem('📋', 'Sin carpeta', 'rMoveTo', `data-id="${d.id}" data-f=""`) + mItem('➕', 'Nueva carpeta…', 'rMoveNew', `data-id="${d.id}"`)),
+  rMoveTo: d => { const r = S.routines.find(x => x.id === d.id); if (d.f) r.folder = d.f; else delete r.folder; save(); render(); },
+  rMoveNew: d => { const f = newFolder(); if (f) MENU.rMoveTo({ id: d.id, f: f.id }); },
+  rDel: d => openMenu(`¿Eliminar «${S.routines.find(x => x.id === d.id).name}»?`, mItem('🗑', 'Eliminar rutina', 'rDelYes', `data-id="${d.id}"`, 'danger') + mItem('↩', 'Cancelar', 'done')),
+  rDelYes: d => { S.routines = S.routines.filter(r => r.id !== d.id); save(); render(); toast('Rutina eliminada'); },
+  fRename: d => { const f = S.folders.find(x => x.id === d.id), n = prompt('Nuevo nombre de la carpeta', f.name)?.trim(); if (n) { f.name = n; save(); } render(); },
+  fDel: d => { S.folders = S.folders.filter(f => f.id !== d.id); S.routines.forEach(r => { if (r.folder === d.id) delete r.folder; }); save(); render(); toast('Carpeta eliminada; sus rutinas siguen en Mis rutinas'); },
   discardAsk: () => openMenu('¿Seguro que quieres descartar el entrenamiento?', `<p class="muted">Se perderán todas las series de este entreno.</p>`
     + mItem('🗑', 'Descartar entrenamiento', 'discardYes', '', 'danger') + mItem('↩', 'Cancelar', 'done')),
   discardYes: () => { S.active = null; save(); render(); toast('Entreno descartado'); },
@@ -839,10 +945,22 @@ const A = {
     }
     H.ws.forEach(w => w.items.forEach(it => { it.exId = map[it.src]; delete it.src; }));
     S.workouts = [...S.workouts, ...H.ws].sort((a, b) => b.start - a.start);
-    const n = H.ws.length; H = null; save(); toast(`${n} entrenos importados`); go('historial');
+    const n = H.ws.length; H = null; save(); toast(`${n} entrenos importados`); go('inicio');
   },
   restAdj: d => { const a = S.active; a.restEnd += d.d * 1000; a.restTotal = Math.max(a.restTotal, (a.restEnd - Date.now()) / 1000); save(); },
   restSkip: () => { S.active.restEnd = null; save(); tick(); },
+  goSub: d => go(d.p, { tab: 'perfil' }),
+  pMetric: d => { pMetric = d.k; render(); },
+  photoPick: () => $('#photoFile').click(),
+  nameEdit: () => { const n = prompt('Tu nombre', S.profile.name); if (n != null) { S.profile.name = n.trim(); save(); render(); } },
+  calMove: d => { calM = new Date(calM.getFullYear(), calM.getMonth() + +d.d, 1); render(); },
+  newFolder: () => { if (newFolder()) render(); },
+  folderToggle: d => { const f = S.folders.find(x => x.id === d.id); f.closed = !f.closed; save(); render(); },
+  folderMenu: d => { const f = S.folders.find(x => x.id === d.id), a = `data-id="${d.id}"`;
+    openMenu(f.name, mItem('✎', 'Renombrar carpeta', 'fRename', a) + mItem('🗑', 'Eliminar carpeta', 'fDel', a, 'danger')); },
+  routineMenu: d => { const r = S.routines.find(x => x.id === d.id), a = `data-id="${d.id}"`;
+    openMenu(r.name, mItem('✎', 'Editar rutina', 'rEdit', a) + mItem('⧉', 'Duplicar rutina', 'rDup', a) + mItem('📁', 'Mover a carpeta', 'rMove', a)
+      + mItem('🗑', 'Eliminar rutina', 'rDel', a, 'danger')); },
   finishMenu: () => openMenu('¿Terminar el entreno?', mItem('✓', 'Guardar entreno', 'save') + mItem('🗑', 'Descartar', 'discardAsk', '', 'danger')),
   finish: () => {
     const a = S.active;
@@ -854,19 +972,19 @@ const A = {
     const prs = items.filter(it => { const b = bestE1rm(it.exId); return b > 0 && Math.max(0, ...work(it.sets).map(e1rm)) > b; }).map(it => ex(it.exId).name);
     const w = { id: a.id, name: a.name.trim() || 'Entreno', start: a.start, end: Date.now(), items };
     S.workouts.unshift(w); S.active = null; save();
-    go('workout', { id: w.id, tab: 'historial' });
+    go('workout', { id: w.id, tab: 'inicio' });
     toast(prs.length ? '🏆 ¡Nuevo récord en ' + prs.join(', ') + '!' : '💪 Entreno guardado');
   },
   openW: d => go('workout', { id: d.id }),
   openEx: d => go('ejercicio', { id: d.id }),
-  delW: d => { if (!confirm('¿Eliminar este entreno del historial?')) return; S.workouts = S.workouts.filter(w => w.id !== d.id); save(); go('historial'); },
+  delW: d => { if (!confirm('¿Eliminar este entreno del historial?')) return; S.workouts = S.workouts.filter(w => w.id !== d.id); save(); go('inicio'); },
   addCustom: () => {
     const name = $('#cName').value.trim();
     if (!name) return toast('Escribe un nombre');
     if (allEx().some(e => norm(e.name) === norm(name))) return toast('Ese ejercicio ya existe');
     S.custom.push({ id: 'c' + uid(), name, muscle: $('#cMuscle').value }); save(); toast('Ejercicio creado'); render();
   },
-  delCustom: d => { if (!confirm('¿Eliminar este ejercicio?')) return; S.custom = S.custom.filter(c => c.id !== d.id); S.routines.forEach(r => r.items = r.items.filter(it => it.exId !== d.id)); save(); go('ejercicios'); },
+  delCustom: d => { if (!confirm('¿Eliminar este ejercicio?')) return; S.custom = S.custom.filter(c => c.id !== d.id); S.routines.forEach(r => r.items = r.items.filter(it => it.exId !== d.id)); save(); go('ejercicios', { tab: 'perfil' }); },
   exportData: () => {
     const a = document.createElement('a');
     a.href = URL.createObjectURL(new Blob([JSON.stringify(S)], { type: 'application/json' }));
@@ -976,6 +1094,7 @@ document.addEventListener('change', e => {
   else if (d.hist) { H.ex[d.hist].pick = t.value; render(); }
   else if ('platebar' in d) { P.bar = t.value; $('#plateOut').innerHTML = plateOut(); }
   else if (t.id === 'hevyCsv' && t.files[0]) readHevyCsv(t.files[0]);
+  else if (t.id === 'photoFile' && t.files[0]) setPhoto(t.files[0]).catch(() => toast('No se pudo usar esa imagen'));
   else if (d.setting) { S.rest = +t.value; save(); }
   else if (t.id === 'importFile' && t.files[0]) importData(t.files[0]);
   else if (t.id === 'impImg' && t.files.length) ocrImport([...t.files]);
