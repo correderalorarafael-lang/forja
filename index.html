@@ -111,7 +111,7 @@ table{width:100%;border-collapse:collapse;font-size:15px}td{padding:4px 0}td:las
 <div id="reorder" hidden></div>
 <script src="ejercicios.js"></script>
 <script>
-const VERSION = 6; // súbelo junto con C en sw.js
+const VERSION = 7; // súbelo junto con C en sw.js
 const MUSCLES =['Pecho','Espalda','Hombros','Brazos','Piernas','Core'];
 const RESTS = Array.from({ length: 41 }, (_, i) => i * 15); // 0 a 10 min, de 15 en 15 s
 const RING = 119.38; // perímetro del anillo de descanso (2π·19)
@@ -245,9 +245,10 @@ function pRutinaVer() {
 }
 // --- importar rutina pegando el texto de otra app (Hevy: "3 series · 10-12 repeticiones" / "Descansa 1min 15s") ---
 const STOP = new Set(['de', 'del', 'la', 'el', 'al', 'con', 'en', 'un', 'una', 'los', 'las', 'agarre', 'a', 'y']);
-const SYN = { cable: 'polea', smith: 'barra', mancuerna: 'mancuernas', barbell: 'barra', dumbbell: 'mancuernas' };
-const VARIANT = new Set(['inclinado', 'declinado', 'cerrado', 'frontal', 'sentado', 'tumbado', 'colgado', 'martillo', 'rumano']); // distinguen variantes: pesan doble
-const toks = s => norm(s).replace(/[^a-z0-9ñ]+/g, ' ').split(' ').filter(w => w && !STOP.has(w)).map(w => (SYN[w] || w).replace(/(es|s)$/, ''));
+const SYN = { cable: 'polea', smith: 'barra', mancuerna: 'mancuernas', barbell: 'barra', dumbbell: 'mancuernas', pantorrilla: 'gemelos', acostado: 'tumbado' };
+const PHRASES = [[/\b(una pierna|un brazo)\b/g, 'unilateral'], [/\bextension(es)? de piernas?\b/g, 'extension cuadriceps'], [/\bcurl de piernas?\b/g, 'curl femoral']]; // nombres de Hevy
+const VARIANT = new Set(['inclinado', 'declinado', 'cerrado', 'frontal', 'sentado', 'tumbado', 'colgado', 'martillo', 'rumano', 'unilateral']); // distinguen variantes: pesan doble
+const toks = s => PHRASES.reduce((t, [re, to]) => t.replace(re, to), norm(s)).replace(/[^a-z0-9ñ]+/g, ' ').split(' ').filter(w => w && !STOP.has(w)).map(w => (SYN[w] || w).replace(/(es|s)$/, ''));
 function guessEx(name) {
   if (S.alias[norm(name)]) return { id: S.alias[norm(name)], score: 1 };
   const a = toks(name), sum = ws => ws.reduce((t, w) => t + (VARIANT.has(w) ? 2 : 1), 0);

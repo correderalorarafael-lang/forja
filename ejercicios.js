@@ -344,4 +344,28 @@ const LIB = [
     'Gira el tronco a un lado llevando las manos junto a la cadera.',
     'Gira al otro lado. Cada giro cuenta como una repetición.'],
     'El giro sale del tronco, no solo de mover los brazos.'),
+  E('Extensión de gemelos en prensa', 'Piernas', ['Gemelos'], [], [
+    'Siéntate en la prensa con la espalda apoyada y pon solo la parte delantera de los pies en el borde bajo de la plataforma.',
+    'Estira las piernas sin bloquear las rodillas y quita los seguros.',
+    'Deja que la plataforma baje doblando los tobillos, hasta notar el gemelo estirado.',
+    'Empuja con las puntas de los pies hasta estirar los tobillos al máximo. Aguanta un segundo y baja despacio.'],
+    'Las rodillas se quedan quietas durante todo el ejercicio: solo se mueven los tobillos.'),
+  E('Extensión de cuádriceps a una pierna', 'Piernas', ['Cuádriceps'], [], [
+    'Siéntate en la máquina de extensiones con el rodillo apoyado en la parte baja de una espinilla.',
+    'Deja la otra pierna relajada, fuera del rodillo, y agárrate a las asas.',
+    'Estira la pierna hasta tenerla recta y aprieta el muslo un segundo.',
+    'Baja despacio. Haz todas las repeticiones y luego cambia de pierna.'],
+    'Hacerlo con una pierna ayuda a igualar la fuerza si notas una más débil que la otra.'),
+  E('Prensa a una pierna', 'Piernas', ['Cuádriceps', 'Glúteos'], ['Isquiotibiales (parte trasera del muslo)'], [
+    'Siéntate en la prensa con la espalda bien apoyada y pon un solo pie en el centro de la plataforma.',
+    'Apoya el otro pie en el suelo o déjalo recogido, fuera de la plataforma.',
+    'Quita los seguros y baja la plataforma doblando la rodilla hacia el pecho.',
+    'Empuja con el talón hasta casi estirar la pierna. Termina la serie y cambia de pierna.'],
+    'Usa bastante menos peso que con dos piernas y no dejes que la rodilla se vaya hacia dentro. (La foto muestra la prensa con las dos piernas.)'),
+  E('Peso muerto unilateral', 'Piernas', ['Isquiotibiales (parte trasera del muslo)', 'Glúteos'], ['Zona lumbar', 'Abdomen'], [
+    'De pie sobre una pierna, con una pesa (mancuerna o kettlebell) en la mano contraria.',
+    'Inclina el tronco hacia delante con la espalda recta mientras la pierna libre se va estirando hacia atrás.',
+    'Baja hasta notar un buen estiramiento detrás del muslo de la pierna de apoyo, con la cadera mirando al suelo.',
+    'Vuelve a subir apretando el glúteo. Termina la serie y cambia de pierna.'],
+    'Si pierdes el equilibrio, apoya una mano en una pared o en un banco mientras aprendes.'),
 ].map((e, i) => ({ id: 'b' + i, img: true, ...e }));
