@@ -111,7 +111,8 @@ table{width:100%;border-collapse:collapse;font-size:15px}td{padding:4px 0}td:las
 <div id="reorder" hidden></div>
 <script src="ejercicios.js"></script>
 <script>
-const MUSCLES = ['Pecho','Espalda','Hombros','Brazos','Piernas','Core'];
+const VERSION = 5; // súbelo junto con C en sw.js
+const MUSCLES =['Pecho','Espalda','Hombros','Brazos','Piernas','Core'];
 const RESTS = Array.from({ length: 41 }, (_, i) => i * 15); // 0 a 10 min, de 15 en 15 s
 const RING = 119.38; // perímetro del anillo de descanso (2π·19)
 const TABS = ['entreno','historial','ejercicios','ajustes'];
@@ -401,7 +402,8 @@ function pAjustes() {
       <p class="muted">Tus datos solo están en este dispositivo. Exporta una copia de vez en cuando para no perderlos.</p>
       <button class="btn wide" data-a="exportData">Exportar datos</button>
       <button class="btn ghost wide" data-a="importClick">Importar copia</button><input type="file" id="importFile" accept=".json,application/json" hidden></div>
-    <p class="muted">${S.workouts.length} entrenos · ${S.routines.length} rutinas · ${S.custom.length} ejercicios propios</p>`];
+    <p class="muted">${S.workouts.length} entrenos · ${S.routines.length} rutinas · ${S.custom.length} ejercicios propios</p>
+    <p class="muted">Forja versión ${VERSION}</p>`];
 }
 function renderSheet() {
   const sh = $('#sheet');

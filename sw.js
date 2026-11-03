@@ -1,13 +1,21 @@
-// shortcut: cache-first app shell; bump C on every release so phones pick up the new version.
-const C = 'forja-v4';
+// La app (HTML/JS) se pide siempre a internet y solo se usa la copia guardada sin conexión;
+// las fotos de ejercicios se sirven desde la copia (no cambian). Cambia C en cada versión.
+const C = 'forja-v5';
+const SHELL = ['./', 'index.html', 'ejercicios.js', 'manifest.json', 'icon.svg'];
 self.addEventListener('install', e => {
-  e.waitUntil(caches.open(C).then(c => c.addAll(['./', 'index.html', 'ejercicios.js', 'manifest.json', 'icon.svg'])));
+  e.waitUntil(caches.open(C).then(c => c.addAll(SHELL.map(u => new Request(u, { cache: 'reload' })))));
   self.skipWaiting();
 });
-self.addEventListener('activate', e =>
-  e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k !== C).map(k => caches.delete(k))))));
-// Las fotos de ejercicios se guardan la primera vez que se ven, para tenerlas sin conexión.
-self.addEventListener('fetch', e => e.respondWith(caches.match(e.request).then(r => r || fetch(e.request).then(res => {
-  if (res.ok && new URL(e.request.url).origin === location.origin) { const copy = res.clone(); caches.open(C).then(c => c.put(e.request, copy)); }
-  return res;
-}))));
+self.addEventListener('activate', e => e.waitUntil(
+  caches.keys().then(ks => Promise.all(ks.filter(k => k !== C).map(k => caches.delete(k)))).then(() => self.clients.claim())));
+self.addEventListener('fetch', e => {
+  const url = new URL(e.request.url);
+  if (e.request.method !== 'GET' || url.origin !== location.origin) return;
+  const keep = res => { if (res.ok) { const copy = res.clone(); caches.open(C).then(c => c.put(e.request, copy)); } return res; };
+  if (url.pathname.includes('/img/')) {
+    e.respondWith(caches.match(e.request).then(r => r || fetch(e.request).then(keep)));
+  } else {
+    e.respondWith(fetch(e.request, { cache: 'no-cache' }).then(keep)
+      .catch(() => caches.match(e.request, { ignoreSearch: true }).then(r => r || caches.match('./'))));
+  }
+});
