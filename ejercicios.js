@@ -139,7 +139,7 @@ const LIB = [
     'Con el codo un poco doblado, sube el brazo hacia el lado hasta la altura del hombro.',
     'Aguanta un instante arriba.',
     'Baja despacio y repite. Luego cambia de lado.'],
-    'La polea mantiene la tensión todo el recorrido, también abajo.'),
+    'La polea mantiene la tensión todo el recorrido, también abajo. (La foto muestra el mismo movimiento con mancuerna.)'),
   E('Elevaciones frontales', 'Hombros', ['Hombros (parte delantera)'], ['Pecho (parte alta)'], [
     'De pie con una mancuerna en cada mano delante de los muslos.',
     'Sube un brazo (o los dos) hacia delante, casi recto, hasta la altura de los ojos.',
