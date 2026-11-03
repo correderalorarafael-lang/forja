@@ -49,7 +49,19 @@ button,input,select{font:inherit;color:inherit}
 .wlist::-webkit-scrollbar{display:none}
 .wi{height:44px;display:grid;place-items:center;scroll-snap-align:center;font-size:22px;font-variant-numeric:tabular-nums;cursor:pointer;color:var(--mut)}
 .wi.on{color:var(--acc);font-weight:700}
-.sh,.set{display:grid;grid-template-columns:36px 1fr 72px 64px 44px;gap:6px;align-items:center;text-align:center}
+.sh,.set{display:grid;grid-template-columns:32px minmax(0,1fr) 58px 50px 38px 40px;gap:5px;align-items:center;text-align:center}
+.prev{font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rpe{height:38px;border-radius:10px;border:0;background:var(--bg);color:var(--mut);font-size:15px;cursor:pointer;padding:0}
+.rpe.on{color:var(--acc);font-weight:800}.set.done .rpe{background:transparent}
+.dots{font-size:24px;line-height:1;padding:4px 10px}
+.noterow{display:flex;gap:8px;align-items:center;margin-top:6px}.noterow .note{flex:1;margin:0}
+#menu{position:fixed;inset:0;z-index:10;background:rgba(0,0,0,.6);display:flex;align-items:flex-end}#menu[hidden]{display:none}
+#menu .in{background:var(--card);width:100%;max-width:640px;margin:0 auto;border-radius:22px 22px 0 0;padding:10px 16px calc(16px + env(safe-area-inset-bottom));animation:sheetup .3s cubic-bezier(.2,.9,.25,1);max-height:85vh;overflow-y:auto}
+#menu h3{text-align:center;margin:4px 0 12px}
+.mi{display:flex;gap:14px;align-items:center;width:100%;background:var(--bg);border:0;border-bottom:1px solid var(--line);padding:15px 16px;font-size:17px;text-align:left;color:var(--txt);cursor:pointer}
+#menuBody>.mi:first-child{border-radius:14px 14px 0 0}#menuBody>.mi:last-of-type{border-radius:0 0 14px 14px;border-bottom:0}
+.mi span{width:26px;text-align:center;flex:none}.mi.danger{color:var(--bad)}
+.rpegrid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:8px 0}.rpegrid .chip{padding:12px;font-size:17px}
 .sh{font-size:12px;color:var(--mut);margin:10px 0 4px}
 .set{padding:4px 0;border-radius:10px}.set.done{background:rgba(47,191,113,.14)}
 .set input{width:100%;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:9px 4px;text-align:center}
@@ -113,7 +125,7 @@ table{width:100%;border-collapse:collapse;font-size:15px}td{padding:4px 0}td:las
 </style>
 </head>
 <body>
-<header><h1 id="title"></h1><button class="icon" data-tab="ajustes" aria-label="Ajustes">⚙</button></header>
+<header><h1 id="title"></h1><span class="row"><button class="btn sm" id="finishBtn" data-a="finishMenu" hidden>Terminar</button><button class="icon" data-tab="ajustes" aria-label="Ajustes">⚙</button></span></header>
 <button id="banner" data-tab="entreno" hidden></button>
 <main id="view"></main>
 <div id="rest"><svg class="ring" viewBox="0 0 44 44" aria-hidden="true"><circle class="trk" cx="22" cy="22" r="19"/><circle id="restring" cx="22" cy="22" r="19"/></svg>
@@ -128,13 +140,14 @@ table{width:100%;border-collapse:collapse;font-size:15px}td{padding:4px 0}td:las
 <div id="sheet" hidden></div>
 <div id="toast"></div>
 <div id="reorder" hidden></div>
+<div id="menu" hidden><div class="in" role="dialog" aria-labelledby="menuTitle"><div class="handle"></div><h3 id="menuTitle"></h3><div id="menuBody"></div></div></div>
 <div id="wheel" hidden><div class="in" role="dialog" aria-label="Temporizador de descanso"><div class="handle"></div>
   <h3>Temporizador de descanso</h3><small id="wheelEx"></small>
   <div class="wheel"><div class="wsel"></div><div class="wlist" id="wlist" tabindex="0"></div></div>
   <button class="btn wide" data-a="wheelDone">Listo</button></div></div>
 <script src="ejercicios.js"></script>
 <script>
-const VERSION = 11; // súbelo junto con C en sw.js
+const VERSION = 12; // súbelo junto con C en sw.js
 const MUSCLES =['Pecho','Espalda','Hombros','Brazos','Piernas','Core'];
 const RESTS = Array.from({ length: 41 }, (_, i) => i * 15); // 0 a 10 min, de 15 en 15 s
 const RING = 119.38; // perímetro del anillo de descanso (2π·19)
@@ -194,12 +207,13 @@ function go(p, extra = {}) {
   V = { p, tab: TABS.includes(p) ? p : V.tab, ...extra };
   scrollTo(0, 0); render();
 }
-addEventListener('popstate', () => { if (wheel) closeWheel(); else if (picker) { picker = null; renderSheet(); } else if (!TABS.includes(V.p)) { V = { p: V.tab, tab: V.tab }; render(); } });
+addEventListener('popstate', () => { if (menu) closeMenu(); else if (wheel) closeWheel(); else if (picker) { picker = null; renderSheet(); } else if (!TABS.includes(V.p)) { V = { p: V.tab, tab: V.tab }; render(); } });
 
 function render() {
   const pages = { entreno: pEntreno, historial: pHistorial, ejercicios: pEjercicios, ajustes: pAjustes, rutina: pRutina, rutinaVer: pRutinaVer, importar: pImportar, importarHist: pImportarHist, cuerpo: pCuerpo, discos: pDiscos, workout: pWorkout, ejercicio: pEjercicio };
   const [title, html] = pages[V.p]();
   $('#title').textContent = title;
+  $('#finishBtn').hidden = !(S.active && V.p === 'entreno');
   $('#view').innerHTML = html;
   document.querySelectorAll('nav button').forEach(b => b.classList.toggle('on', b.dataset.tab === V.tab));
   renderSheet(); tick();
@@ -221,33 +235,34 @@ function pEntreno() {
     <div class="card">
       <input class="title-in" data-w="name" value="${esc(a.name)}" aria-label="Nombre del entreno">
       <div class="stats"><div><small>Duración</small><b id="elapsed"></b></div><div><small>Volumen</small><b id="vol">${fmtKg(vol(a))}</b></div><div><small>Series</small><b id="nsets">${nsets(a)}</b></div></div>
-      <div class="row between" style="margin-top:10px"><small>Toca el nº de serie: <b class="t-w">C</b> calentamiento · <b class="t-f">F</b> fallo · <b class="t-d">D</b> drop set</small>
+      <div class="row between" style="margin-top:10px"><small>Toca el nº de serie para cambiar su tipo o borrarla.</small>
         <button class="btn ghost sm" data-a="openDiscos">🧮 Discos</button></div>
     </div>
     ${a.items.map(exCard).join('')}
     <button class="btn ghost wide" data-a="pick" data-mode="workout">+ Añadir ejercicio</button>
-    <button class="btn wide" data-a="finish">Terminar entreno</button>
-    <button class="btn danger wide" data-a="discard">Descartar</button>`];
+    `];
 }
 function exCard(it, i) {
   const prev = prevSets(it.exId);
   const e = ex(it.exId), list = S.active.items;
+  const note = S.notes[it.exId] || '';
   return `<div class="card ${it.ss ? 'ss' : ''}">
     ${it.ss ? `<small class="sslabel">🔗 Superserie ${ssLetter(list, i)}</small>` : ''}
     <div class="row between ex-head" data-drag="workout" data-i="${i}">
-      <b class="exname" data-a="openEx" data-id="${it.exId}"><span class="grip" aria-hidden="true">⠿</span>${thumb(e)}${esc(e.name)}</b>
-      <button class="icon" data-a="rmEx" data-i="${i}" aria-label="Quitar ejercicio">✕</button></div>
-    <input class="note" data-note="${it.exId}" value="${esc(S.notes[it.exId] || '')}" placeholder="📝 Añadir nota (asiento, agarre…)">
-    ${restStepper('restStep', i, it.rest)}
-    <div class="sh"><span>Serie</span><span>Anterior</span><span>kg</span><span>Reps</span><span>✓</span></div>
+      <b class="exname" data-a="openEx" data-id="${it.exId}">${thumb(e)}${esc(e.name)}</b>
+      <button class="icon dots" data-a="exMenu" data-i="${i}" aria-label="Opciones del ejercicio">⋮</button></div>
+    <div class="row" style="flex-wrap:wrap;gap:8px;margin-top:4px">${restStepper('restStep', i, it.rest)}
+      <button class="restchip" data-a="noteOpen" data-id="${it.exId}">📝 Nota</button></div>
+    ${note || noteOpen === it.exId ? `<div class="noterow"><span aria-hidden="true">🗒</span><input class="note" data-note="${it.exId}" id="note-${it.exId}" value="${esc(note)}" placeholder="Escribe una nota (asiento, agarre…)"></div>` : ''}
+    <div class="sh"><span>Serie</span><span>Anterior</span><span>kg</span><span>Reps</span><span>RPE</span><span>✓</span></div>
     ${it.sets.map((s, j) => { const p = prev[j]; return `<div class="set ${s.done ? 'done' : ''}">
-      <button class="n t-${s.t || ''}" data-a="setType" data-i="${i}" data-j="${j}" aria-label="Tipo de serie">${setLabel(it.sets, j)}</button>
+      <button class="n t-${s.t || ''}" data-a="setMenu" data-i="${i}" data-j="${j}" aria-label="Opciones de la serie">${setLabel(it.sets, j)}</button>
       <button class="prev" data-a="usePrev" data-i="${i}" data-j="${j}" ${p ? '' : 'disabled'}>${p ? `${fmt(p.kg)}×${p.reps}` : '—'}</button>
       <input inputmode="decimal" data-i="${i}" data-j="${j}" data-f="kg" value="${s.kg === '' ? '' : fmt(s.kg)}" placeholder="${p ? fmt(p.kg) : ''}" aria-label="kg">
       <input inputmode="numeric" data-i="${i}" data-j="${j}" data-f="reps" value="${s.reps}" placeholder="${p ? p.reps : esc(it.target || '')}" aria-label="Repeticiones">
+      <button class="rpe ${s.rpe ? 'on' : ''}" data-a="rpeMenu" data-i="${i}" data-j="${j}" aria-label="RPE (esfuerzo)">${s.rpe ? fmt(s.rpe) : '◔'}</button>
       <button class="chk" data-a="toggle" data-i="${i}" data-j="${j}" aria-label="Completar serie">✓</button></div>`; }).join('')}
-    <div class="row" style="margin-top:8px;flex-wrap:wrap"><button class="btn ghost sm" data-a="addSet" data-i="${i}">+ Serie</button><button class="btn ghost sm" data-a="rmSet" data-i="${i}" ${it.sets.length ? '' : 'disabled'}>− Serie</button>
-      ${list[i + 1] ? `<button class="btn ghost sm" data-a="ssLink" data-i="${i}">${it.ss && it.ss === list[i + 1].ss ? '✂ Separar del siguiente' : '🔗 Superserie con el siguiente'}</button>` : ''}</div>
+    <button class="btn ghost wide" style="margin-top:8px" data-a="addSet" data-i="${i}">+ Añadir serie</button>
   </div>`;
 }
 const thumb = e => e.img ? `<img class="thumb" src="img/${e.id}-0.jpg" alt="" loading="lazy">` : `<span class="thumb ph">${esc((e.name || '?')[0])}</span>`;
@@ -403,7 +418,7 @@ function pWorkout() {
       <div class="stats" style="margin-top:8px"><div><small>Duración</small><b>${fdur(w.end - w.start)}</b></div><div><small>Volumen</small><b>${fmtKg(vol(w))}</b></div><div><small>Series</small><b>${nsets(w)}</b></div></div></div>
     ${w.items.map((it, i) => `<div class="card ${it.ss ? 'ss' : ''}">${it.ss ? `<small class="sslabel">🔗 Superserie ${ssLetter(w.items, i)}</small>` : ''}
       <b class="exname" data-a="openEx" data-id="${it.exId}" style="display:flex;align-items:center;gap:10px">${thumb(ex(it.exId))}${esc(ex(it.exId).name)}</b>
-      <table>${it.sets.map((s, j) => `<tr><td class="t-${s.t || ''}">${setLabel(it.sets, j)}</td><td>${fmt(s.kg)} kg × ${s.reps}</td><td>${s.t === 'w' ? 'calentamiento' : `1RM ~${fmt(e1rm(s))}`}</td></tr>`).join('')}</table></div>`).join('')}
+      <table>${it.sets.map((s, j) => `<tr><td class="t-${s.t || ''}">${setLabel(it.sets, j)}</td><td>${fmt(s.kg)} kg × ${s.reps}${s.rpe ? ` <small>RPE ${fmt(s.rpe)}</small>` : ''}</td><td>${s.t === 'w' ? 'calentamiento' : `1RM ~${fmt(e1rm(s))}`}</td></tr>`).join('')}</table></div>`).join('')}
     ${muscleBars(w.items.map(it => ({ exId: it.exId, n: it.sets.length })))}
     <button class="btn wide" data-a="repeatW" data-id="${w.id}">Repetir este entreno</button>
     <button class="btn ghost wide" data-a="asRoutine" data-id="${w.id}">Guardar como rutina</button>
@@ -668,6 +683,43 @@ wl().addEventListener('scroll', () => {
 wl().addEventListener('click', e => { const it = e.target.closest('.wi'); if (it) wl().scrollTo({ top: +it.dataset.k * WH, behavior: 'smooth' }); });
 $('#wheel').addEventListener('click', e => { if (e.target.id === 'wheel') history.back(); }); // tocar fuera: cancelar
 
+// --- menú inferior: botones con data-mi cierran el menú y ejecutan MENU[mi]; los data-a (↑↓ al reordenar) no lo cierran ---
+let menu = null, noteOpen = null, replaceIdx = null;
+function openMenu(title, html) {
+  $('#menuTitle').textContent = title; $('#menuBody').innerHTML = html; $('#menu').hidden = false;
+  menu = { run: null }; history.pushState(null, '');
+}
+function closeMenu() { const run = menu.run; menu = null; $('#menu').hidden = true; run ? run() : render(); }
+$('#menu').addEventListener('click', e => {
+  if (e.target.id === 'menu') return history.back(); // tocar fuera
+  const b = e.target.closest('[data-mi]'); if (!b) return;
+  menu.run = () => MENU[b.dataset.mi](b.dataset); history.back();
+});
+const mItem = (icon, label, mi, attrs = '', cls = '') => `<button class="mi ${cls}" data-mi="${mi}" ${attrs}><span aria-hidden="true">${icon}</span>${label}</button>`;
+const reorderHtml = () => S.active.items.map((it, k, l) => `<div class="mi"><span>${k + 1}</span><b style="flex:1;font-weight:500">${esc(ex(it.exId).name)}</b>
+  <button class="icon" data-a="moveEx" data-i="${k}" data-d="-1" ${k ? '' : 'disabled'} aria-label="Subir">↑</button><button class="icon" data-a="moveEx" data-i="${k}" data-d="1" ${k < l.length - 1 ? '' : 'disabled'} aria-label="Bajar">↓</button></div>`).join('')
+  + `<button class="btn wide" data-mi="done">Listo</button>`;
+const MENU = {
+  done: () => render(),
+  reorder: () => openMenu('Reordenar ejercicios', reorderHtml()),
+  replace: d => { replaceIdx = +d.i; picker = 'replace'; F.pick = { q: '', m: '' }; history.pushState(null, ''); render(); },
+  ss: d => { linkSS(S.active.items, +d.i); save(); render(); },
+  warm: d => { // 2 series de calentamiento al principio, al 50 % y 70 % del peso de trabajo
+    const it = S.active.items[d.i], base = +work(it.sets)[0]?.kg || +work(prevSets(it.exId))[0]?.kg || 0;
+    const r = p => base ? Math.round(base * p / 2.5) * 2.5 : '';
+    it.sets.unshift({ kg: r(.5), reps: 10, done: false, t: 'w' }, { kg: r(.7), reps: 6, done: false, t: 'w' });
+    save(); render(); toast('Añadidas 2 series de calentamiento');
+  },
+  rm: d => A.rmEx(d),
+  type: d => { const s = S.active.items[d.i].sets[d.j]; if (d.v) s.t = d.v; else delete s.t; save(); render(); },
+  delset: d => { S.active.items[d.i].sets.splice(d.j, 1); save(); render(); },
+  rpe: d => { const s = S.active.items[d.i].sets[d.j]; if (d.v) s.rpe = +d.v; else delete s.rpe; save(); render(); },
+  save: () => A.finish(),
+  discardAsk: () => openMenu('¿Seguro que quieres descartar el entrenamiento?', `<p class="muted">Se perderán todas las series de este entreno.</p>`
+    + mItem('🗑', 'Descartar entrenamiento', 'discardYes', '', 'danger') + mItem('↩', 'Cancelar', 'done')),
+  discardYes: () => { S.active = null; save(); render(); toast('Entreno descartado'); },
+};
+
 // --- acciones ---
 function startWorkout(name, items) {
   if (S.active && !confirm('Ya tienes un entreno en curso. ¿Descartarlo y empezar otro?')) return;
@@ -723,14 +775,14 @@ const A = {
   pick: d => { picker = d.mode; F.pick = { q: '', m: '' }; history.pushState(null, ''); renderSheet(); },
   closePick: () => history.back(),
   pickEx: d => {
-    if (picker === 'workout') S.active.items.push({ exId: d.id, rest: S.rest, sets: Array.from({ length: prevSets(d.id).length || 1 }, () => ({ kg: '', reps: '', done: false })) });
+    if (picker === 'replace') { const it = S.active.items[replaceIdx]; it.exId = d.id; it.sets = it.sets.map(() => ({ kg: '', reps: '', done: false })); }
+    else if (picker === 'workout') S.active.items.push({ exId: d.id, rest: S.rest, sets: Array.from({ length: prevSets(d.id).length || 1 }, () => ({ kg: '', reps: '', done: false })) });
     else draft.items.push({ exId: d.id, sets: 3, reps: '', rest: S.rest });
     save(); picker = null; history.back(); render(); scrollTo(0, document.body.scrollHeight);
   },
   chip: d => { F[d.k].m = d.m; if (d.k === 'pick') renderSheet(); else render(); },
   rmEx: d => { const it = S.active.items[d.i]; if (it.sets.some(s => s.done) && !confirm('¿Quitar este ejercicio y sus series?')) return; S.active.items.splice(d.i, 1); save(); render(); },
   addSet: d => { S.active.items[d.i].sets.push({ kg: '', reps: '', done: false }); save(); render(); },
-  rmSet: d => { S.active.items[d.i].sets.pop(); save(); render(); },
   usePrev: d => { const it = S.active.items[d.i], p = prevSets(it.exId)[d.j]; Object.assign(it.sets[d.j], { kg: p.kg, reps: p.reps }); save(); render(); },
   toggle: d => {
     const it = S.active.items[d.i], s = it.sets[d.j];
@@ -745,8 +797,26 @@ const A = {
     } else s.done = false;
     save(); render();
   },
-  setType: d => { const s = S.active.items[d.i].sets[d.j]; s.t = SET_TYPES[(SET_TYPES.indexOf(s.t || '') + 1) % 4]; if (!s.t) delete s.t; save(); render(); },
-  ssLink: d => { linkSS(S.active.items, +d.i); save(); render(); },
+  exMenu: d => {
+    const i = +d.i, list = S.active.items, it = list[i], linked = it.ss && list[i + 1]?.ss === it.ss, a = `data-i="${i}"`;
+    openMenu(ex(it.exId).name, mItem('⇅', 'Reordenar ejercicios', 'reorder') + mItem('🔄', 'Reemplazar ejercicio', 'replace', a)
+      + (list[i + 1] ? mItem(linked ? '✂' : '🔗', linked ? 'Separar de la superserie' : 'Superserie con el siguiente', 'ss', a) : '')
+      + mItem('🔥', 'Añadir series de calentamiento', 'warm', a) + mItem('✕', 'Eliminar ejercicio', 'rm', a, 'danger'));
+  },
+  setMenu: d => {
+    const s = S.active.items[d.i].sets[d.j], a = `data-i="${d.i}" data-j="${d.j}"`;
+    openMenu(`Serie ${+d.j + 1}`, [['', '1', 'Normal'], ['w', 'C', 'Calentamiento'], ['f', 'F', 'Al fallo'], ['d', 'D', 'Drop set']]
+      .map(([t, ic, l]) => mItem(`<b class="t-${t}">${ic}</b>`, l + ((s.t || '') === t ? ' ✓' : ''), 'type', `${a} data-v="${t}"`)).join('')
+      + mItem('✕', 'Eliminar serie', 'delset', a, 'danger'));
+  },
+  rpeMenu: d => {
+    const s = S.active.items[d.i].sets[d.j], a = `data-i="${d.i}" data-j="${d.j}"`;
+    openMenu('RPE: ¿cuánto esfuerzo?', `<p class="muted">10 = no podías hacer ni una repetición más · 9 = te quedaba 1 · 8 = te quedaban 2…</p>
+      <div class="rpegrid">${[6, 6.5, 7, 7.5, 8, 8.5, 9, 9.5, 10].map(v => `<button class="chip ${s.rpe === v ? 'on' : ''}" data-mi="rpe" ${a} data-v="${v}">${fmt(v)}</button>`).join('')}</div>
+      ${s.rpe ? `<button class="btn ghost wide" data-mi="rpe" ${a} data-v="">Quitar RPE</button>` : ''}`);
+  },
+  moveEx: d => { const l = S.active.items, i = +d.i, j = i + +d.d; [l[i], l[j]] = [l[j], l[i]]; save(); $('#menuBody').innerHTML = reorderHtml(); },
+  noteOpen: d => { noteOpen = d.id; render(); $('#note-' + d.id)?.focus(); },
   ssLinkR: d => { linkSS(draft.items, +d.i); render(); },
   openDiscos: () => go('discos'),
   bodyM: d => { bodyM = d.k; render(); },
@@ -773,11 +843,11 @@ const A = {
   },
   restAdj: d => { const a = S.active; a.restEnd += d.d * 1000; a.restTotal = Math.max(a.restTotal, (a.restEnd - Date.now()) / 1000); save(); },
   restSkip: () => { S.active.restEnd = null; save(); tick(); },
-  discard: () => { if (confirm('¿Descartar el entreno? Se perderán las series.')) { S.active = null; save(); render(); } },
+  finishMenu: () => openMenu('¿Terminar el entreno?', mItem('✓', 'Guardar entreno', 'save') + mItem('🗑', 'Descartar', 'discardAsk', '', 'danger')),
   finish: () => {
     const a = S.active;
     const items = a.items.map(it => ({ exId: it.exId, ...(it.ss && { ss: it.ss }),
-      sets: it.sets.filter(s => s.done).map(s => ({ kg: +s.kg || 0, reps: +s.reps, ...(s.t && { t: s.t }) })) })).filter(it => it.sets.length);
+      sets: it.sets.filter(s => s.done).map(s => ({ kg: +s.kg || 0, reps: +s.reps, ...(s.t && { t: s.t }), ...(s.rpe && { rpe: s.rpe }) })) })).filter(it => it.sets.length);
     if (!items.length) { if (confirm('No has completado ninguna serie. ¿Descartar el entreno?')) { S.active = null; save(); render(); } return; }
     const pending = a.items.reduce((n, it) => n + it.sets.filter(s => !s.done).length, 0);
     if (pending && !confirm(`Hay ${pending} series sin marcar ✓ que no se guardarán. ¿Terminar?`)) return;
