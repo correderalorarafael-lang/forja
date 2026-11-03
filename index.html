@@ -156,7 +156,7 @@ table{width:100%;border-collapse:collapse;font-size:15px}td{padding:4px 0}td:las
   <button class="btn wide" data-a="wheelDone">Listo</button></div></div>
 <script src="ejercicios.js"></script>
 <script>
-const VERSION = 13; // súbelo junto con C en sw.js
+const VERSION = 14; // súbelo junto con C en sw.js
 const MUSCLES =['Pecho','Espalda','Hombros','Brazos','Piernas','Core'];
 const RESTS = Array.from({ length: 41 }, (_, i) => i * 15); // 0 a 10 min, de 15 en 15 s
 const RING = 119.38; // perímetro del anillo de descanso (2π·19)
@@ -216,7 +216,7 @@ function go(p, extra = {}) {
   V = { p, tab: TABS.includes(p) ? p : V.tab, ...extra };
   scrollTo(0, 0); render();
 }
-addEventListener('popstate', () => { if (menu) closeMenu(); else if (wheel) closeWheel(); else if (picker) { picker = null; renderSheet(); } else if (!TABS.includes(V.p)) { V = { p: V.tab, tab: V.tab }; render(); } });
+addEventListener('popstate', () => { if (menu) closeMenu(); else if (wheel) closeWheel(); else if (picker) { picker = null; render(); if (pickedScroll) scrollTo(0, document.body.scrollHeight); pickedScroll = false; } else if (!TABS.includes(V.p)) { V = { p: V.tab, tab: V.tab }; render(); } });
 
 function render() {
   const pages = { inicio: pInicio, perfil: pPerfil, stats: pStats, calendario: pCalendario, entreno: pEntreno, ejercicios: pEjercicios, ajustes: pAjustes, rutina: pRutina, rutinaVer: pRutinaVer, importar: pImportar, importarHist: pImportarHist, cuerpo: pCuerpo, discos: pDiscos, workout: pWorkout, ejercicio: pEjercicio };
@@ -770,7 +770,7 @@ wl().addEventListener('click', e => { const it = e.target.closest('.wi'); if (it
 $('#wheel').addEventListener('click', e => { if (e.target.id === 'wheel') history.back(); }); // tocar fuera: cancelar
 
 // --- menú inferior: botones con data-mi cierran el menú y ejecutan MENU[mi]; los data-a (↑↓ al reordenar) no lo cierran ---
-let menu = null, noteOpen = null, replaceIdx = null;
+let menu = null, noteOpen = null, replaceIdx = null, pickedScroll = false;
 function openMenu(title, html) {
   $('#menuTitle').textContent = title; $('#menuBody').innerHTML = html; $('#menu').hidden = false;
   menu = { run: null }; history.pushState(null, '');
@@ -884,7 +884,8 @@ const A = {
     if (picker === 'replace') { const it = S.active.items[replaceIdx]; it.exId = d.id; it.sets = it.sets.map(() => ({ kg: '', reps: '', done: false })); }
     else if (picker === 'workout') S.active.items.push({ exId: d.id, rest: S.rest, sets: Array.from({ length: prevSets(d.id).length || 1 }, () => ({ kg: '', reps: '', done: false })) });
     else draft.items.push({ exId: d.id, sets: 3, reps: '', rest: S.rest });
-    save(); picker = null; history.back(); render(); scrollTo(0, document.body.scrollHeight);
+    // la lista se cierra en popstate: si se cerrase aquí, ese "atrás" sacaría del editor de rutinas
+    save(); pickedScroll = picker !== 'replace'; history.back();
   },
   chip: d => { F[d.k].m = d.m; if (d.k === 'pick') renderSheet(); else render(); },
   rmEx: d => { const it = S.active.items[d.i]; if (it.sets.some(s => s.done) && !confirm('¿Quitar este ejercicio y sus series?')) return; S.active.items.splice(d.i, 1); save(); render(); },
