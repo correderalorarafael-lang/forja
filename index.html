@@ -111,7 +111,7 @@ table{width:100%;border-collapse:collapse;font-size:15px}td{padding:4px 0}td:las
 <div id="reorder" hidden></div>
 <script src="ejercicios.js"></script>
 <script>
-const VERSION = 8; // súbelo junto con C en sw.js
+const VERSION = 9; // súbelo junto con C en sw.js
 const MUSCLES =['Pecho','Espalda','Hombros','Brazos','Piernas','Core'];
 const RESTS = Array.from({ length: 41 }, (_, i) => i * 15); // 0 a 10 min, de 15 en 15 s
 const RING = 119.38; // perímetro del anillo de descanso (2π·19)
@@ -278,8 +278,12 @@ function parseRoutine(text) {
     const k = m ? prevName(i) : -1;
     if (k >= 0) {
       const rest = restOf(l) ?? restOf(lines[i + 1] || '') ?? S.rest;
-      if (!rows.length) { const t = prevName(k); if (t >= 0) title = clean(lines[t]); }
-      rows.push({ src: clean(lines[k]), sets: +m[1], reps: m[2].replace(/\s*(repeticiones|reps?)\b.*/i, '').replace(/[^\d-]/g, ''), rest });
+      // En el móvil los nombres largos ocupan dos líneas ("Curl de Piernas Acostado" / "(Máquina)").
+      // Antes del primer ejercicio va el título, así que ahí solo se une si la línea es claramente continuación.
+      let s = k;
+      while (s > 0 && k - s < 2 && nameish(lines[s - 1]) && (rows.length || /^\W*\(/.test(lines[s]) || /^[a-záéíóúñü]/.test(clean(lines[s])))) s--;
+      if (!rows.length) { const t = prevName(s); if (t >= 0) title = clean(lines[t]); }
+      rows.push({ src: [clean(lines[s]), ...lines.slice(s + 1, k + 1)].join(' '), sets: +m[1], reps: m[2].replace(/\s*(repeticiones|reps?)\b.*/i, '').replace(/[^\d-]/g, ''), rest });
     } else if (x && !m) rows.push({ src: x[1], sets: +x[2], reps: x[3].replace(/\s/g, ''), rest: S.rest });
   });
   rows.forEach(r => { const g = guessEx(r.src); r.pick = g.score >= .34 ? g.id : 'new'; });
