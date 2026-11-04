@@ -136,6 +136,8 @@ button.n{background:none;border:0;padding:8px 0;cursor:pointer;font:inherit;font
 #toast{position:fixed;top:calc(70px + env(safe-area-inset-top));left:50%;transform:translateX(-50%);background:#26292f;border:1px solid var(--line);padding:10px 16px;border-radius:12px;z-index:10;opacity:0;transition:opacity .2s;pointer-events:none;max-width:90vw}
 #toast.on{opacity:1}
 .chart{width:100%;height:auto;background:var(--bg);border-radius:12px}.ct{fill:var(--mut);font-size:11px}
+.prog{margin:8px 0 2px;padding:8px 12px;border-radius:10px;background:var(--bg);font-size:14px;color:var(--txt)}.prog.up{background:rgba(255,122,26,.15);border:1px solid var(--acc)}
+.hero{text-align:center}.upc{color:var(--ok)}.downc{color:var(--bad)}.mut{color:var(--mut)}
 .cnt{display:flex;align-items:center;gap:6px}.cnt b{min-width:22px;text-align:center}
 .field{width:100%;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px;margin:6px 0}
 table{width:100%;border-collapse:collapse;font-size:15px}td{padding:4px 0}td:last-child{text-align:right;color:var(--mut)}
@@ -164,13 +166,37 @@ table{width:100%;border-collapse:collapse;font-size:15px}td{padding:4px 0}td:las
   <button class="btn wide" data-a="wheelDone">Listo</button></div></div>
 <script src="ejercicios.js"></script>
 <script>
-const VERSION = 20; // súbelo junto con C en sw.js
+const VERSION = 21; // súbelo junto con C en sw.js
 const MUSCLES =['Pecho','Espalda','Hombros','Brazos','Piernas','Core'];
 const RESTS = Array.from({ length: 41 }, (_, i) => i * 15); // 0 a 10 min, de 15 en 15 s
 const RING = 119.38; // perímetro del anillo de descanso (2π·19)
 const TABS = ['inicio','entreno','perfil','ajustes'];
 const SET_TYPES = ['', 'w', 'f', 'd']; // normal, calentamiento, fallo, drop set
 const work = sets => sets.filter(s => s.t !== 'w'); // las de calentamiento no cuentan para récords
+// Progresión doble: siempre entre 8 y 12 reps. Si en la última sesión todas las series de trabajo llegaron a 12,
+// se sube peso y se vuelve a 8; si no, mismo peso y +1 rep por serie.
+const REP_MIN = 8, REP_MAX = 12;
+const stepKg = exId => /mancuerna/i.test(ex(exId).name) ? 2 : 2.5;
+function progression(exId) {
+  const last = work(prevSets(exId));
+  if (!last.length) return null;
+  const kg = Math.max(...last.map(s => +s.kg || 0)), top = last.filter(s => (+s.kg || 0) === kg);
+  if (kg > 0 && top.every(s => s.reps >= REP_MAX)) {
+    const next = kg + stepKg(exId);
+    return { up: true, kg: next, msg: `⬆️ Sube peso: ${fmt(next)} kg × ${REP_MIN} (la última vez hiciste ${REP_MAX} en todas)` };
+  }
+  return { up: false, kg, msg: last.every(s => s.reps >= REP_MIN)
+    ? `🎯 Mantén ${fmt(kg)} kg y suma 1 rep por serie (hasta ${REP_MAX})`
+    : `🎯 Mantén ${fmt(kg)} kg hasta hacer ${REP_MIN}–${REP_MAX} en todas` };
+}
+// Sugerencia para la serie j del ejercicio (null en calentamiento o sin historial).
+function suggest(it, j) {
+  if (it.sets[j].t === 'w') return null;
+  const pr = progression(it.exId); if (!pr) return null;
+  const last = work(prevSets(it.exId)), k = work(it.sets.slice(0, j)).length, ref = last[Math.min(k, last.length - 1)];
+  if (pr.up) return { kg: pr.kg, reps: REP_MIN };
+  return { kg: +ref.kg || 0, reps: Math.min(REP_MAX, ref.reps >= REP_MIN ? ref.reps + 1 : REP_MIN) };
+}
 
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -236,7 +262,7 @@ function go(p, extra = {}) {
 addEventListener('popstate', () => { if (menu) closeMenu(); else if (wheel) closeWheel(); else if (picker) { picker = null; render(); if (pickedScroll) scrollTo(0, document.body.scrollHeight); pickedScroll = false; } else if (!TABS.includes(V.p)) { V = { p: V.tab, tab: V.tab }; render(); } });
 
 function render() {
-  const pages = { inicio: pInicio, perfil: pPerfil, stats: pStats, calendario: pCalendario, entreno: pEntreno, ejercicios: pEjercicios, ajustes: pAjustes, rutina: pRutina, rutinaVer: pRutinaVer, importar: pImportar, importarHist: pImportarHist, cuerpo: pCuerpo, discos: pDiscos, workout: pWorkout, ejercicio: pEjercicio };
+  const pages = { inicio: pInicio, perfil: pPerfil, stats: pStats, calendario: pCalendario, entreno: pEntreno, ejercicios: pEjercicios, ajustes: pAjustes, rutina: pRutina, rutinaVer: pRutinaVer, importar: pImportar, importarHist: pImportarHist, cuerpo: pCuerpo, discos: pDiscos, workout: pWorkout, resumen: pResumen, ejercicio: pEjercicio };
   if (!pages[V.p]) V = { p: 'inicio', tab: 'inicio' }; // pantalla guardada que ya no existe
   const [title, html] = pages[V.p]();
   $('#title').textContent = title;
@@ -285,7 +311,7 @@ function pEntreno() {
 function exCard(it, i) {
   const prev = prevSets(it.exId);
   const e = ex(it.exId), list = S.active.items;
-  const note = S.notes[it.exId] || '';
+  const note = S.notes[it.exId] || '', prog = progression(it.exId);
   return `<div class="card ${it.ss ? 'ss' : ''}">
     ${it.ss ? `<small class="sslabel">🔗 Superserie ${ssLetter(list, i)}</small>` : ''}
     <div class="row between ex-head" data-drag="workout" data-i="${i}">
@@ -293,13 +319,14 @@ function exCard(it, i) {
       <button class="icon dots" data-a="exMenu" data-i="${i}" aria-label="Opciones del ejercicio">⋮</button></div>
     <div class="row" style="flex-wrap:wrap;gap:8px;margin-top:4px">${restStepper('restStep', i, it.rest)}
       <button class="restchip" data-a="noteOpen" data-id="${it.exId}">📝 Nota</button></div>
+    ${prog ? `<p class="prog ${prog.up ? 'up' : ''}">${prog.msg}</p>` : ''}
     ${note || noteOpen === it.exId ? `<div class="noterow"><span aria-hidden="true">🗒</span><input class="note" data-note="${it.exId}" id="note-${it.exId}" value="${esc(note)}" placeholder="Escribe una nota (asiento, agarre…)"></div>` : ''}
     <div class="sh"><span>Serie</span><span>Anterior</span><span>kg</span><span>Reps</span><span>RPE</span><span>✓</span></div>
-    ${it.sets.map((s, j) => { const p = prev[j]; return `<div class="setwrap"><div class="swbg" aria-hidden="true">🗑 Borrar</div><div class="set ${s.done ? 'done' : ''}" data-si="${i}" data-sj="${j}">
+    ${it.sets.map((s, j) => { const p = prev[j], sg = suggest(it, j); return `<div class="setwrap"><div class="swbg" aria-hidden="true">🗑 Borrar</div><div class="set ${s.done ? 'done' : ''}" data-si="${i}" data-sj="${j}">
       <button class="n t-${s.t || ''}" data-a="setMenu" data-i="${i}" data-j="${j}" aria-label="Opciones de la serie">${setLabel(it.sets, j)}</button>
       <button class="prev" data-a="usePrev" data-i="${i}" data-j="${j}" ${p ? '' : 'disabled'}>${p ? `${fmt(p.kg)}×${p.reps}` : '—'}</button>
-      <input inputmode="decimal" data-i="${i}" data-j="${j}" data-f="kg" value="${s.kg === '' ? '' : fmt(s.kg)}" placeholder="${p ? fmt(p.kg) : ''}" aria-label="kg">
-      <input inputmode="numeric" data-i="${i}" data-j="${j}" data-f="reps" value="${s.reps}" placeholder="${p ? p.reps : esc(it.target || '')}" aria-label="Repeticiones">
+      <input inputmode="decimal" data-i="${i}" data-j="${j}" data-f="kg" value="${s.kg === '' ? '' : fmt(s.kg)}" placeholder="${sg ? fmt(sg.kg) : p ? fmt(p.kg) : ''}" aria-label="kg">
+      <input inputmode="numeric" data-i="${i}" data-j="${j}" data-f="reps" value="${s.reps}" placeholder="${sg ? sg.reps : p ? p.reps : esc(it.target || '')}" aria-label="Repeticiones">
       <button class="rpe ${s.rpe ? 'on' : ''}" data-a="rpeMenu" data-i="${i}" data-j="${j}" aria-label="RPE (esfuerzo)">${s.rpe ? fmt(s.rpe) : '◔'}</button>
       <button class="chk" data-a="toggle" data-i="${i}" data-j="${j}" aria-label="Completar serie">✓</button></div></div>`; }).join('')}
     <button class="btn ghost wide" style="margin-top:8px" data-a="addSet" data-i="${i}">+ Añadir serie</button>
@@ -508,6 +535,84 @@ function pCalendario() {
       <div class="cal">${['L', 'M', 'X', 'J', 'V', 'S', 'D'].map(d => `<small>${d}</small>`).join('')}${cells.join('')}</div>
       <p class="muted">${Object.values(byDay).flat().length} entrenos este mes · toca un día para verlo</p></div>`];
 }
+// --- resumen del entreno: récords, comparación con la última vez y qué toca subir ---
+function summary(w) {
+  const before = S.workouts.filter(x => x.start < w.start);
+  const same = before.find(x => x.name === w.name); // la última vez que hiciste esta rutina
+  const best = sets => Math.max(0, ...work(sets).map(e1rm));
+  const rows = w.items.map(it => {
+    const b = best(it.sets), prevAll = Math.max(0, ...before.flatMap(x => x.items.filter(y => y.exId === it.exId)).map(y => best(y.sets)));
+    const lastIt = before.find(x => x.items.some(y => y.exId === it.exId))?.items.find(y => y.exId === it.exId);
+    const ws = work(it.sets), top = ws.reduce((m, s) => !m || e1rm(s) > e1rm(m) ? s : m, null), kg = Math.max(0, ...ws.map(s => +s.kg || 0));
+    const lastKg = lastIt ? Math.max(0, ...work(lastIt.sets).map(s => +s.kg || 0)) : 0; // subir de peso cuenta como mejora aunque bajen las reps
+    return { it, top, pr: prevAll > 0 && b > prevAll, gain: b - prevAll, diff: lastIt ? (kg - lastKg) || b - best(lastIt.sets) : null,
+      up: kg > 0 && ws.filter(s => +s.kg === kg).every(s => s.reps >= REP_MAX), next: kg + stepKg(it.exId) };
+  });
+  return { rows, same, prs: rows.filter(r => r.pr), ups: rows.filter(r => r.up) };
+}
+const pct = (a, b) => b ? Math.round((a - b) / b * 100) : 0;
+const arrow = d => d == null ? '' : d > .05 ? '<b class="upc">↑</b>' : d < -.05 ? '<b class="downc">↓</b>' : '<b class="mut">=</b>';
+function pResumen() {
+  const w = S.workouts.find(x => x.id === V.id);
+  if (!w) { V = { p: 'inicio', tab: 'inicio' }; return pInicio(); }
+  const { rows, same, prs, ups } = summary(w), dur = w.end - w.start;
+  return ['Resumen', `
+    <div class="card hero"><div style="font-size:40px">💪</div><h2 style="margin:4px 0">¡Entreno completado!</h2>
+      <b>${esc(w.name)}</b><br><small>${new Date(w.start).toLocaleString('es', { dateStyle: 'full', timeStyle: 'short' })}</small></div>
+    <div class="card stats"><div><small>Duración</small><b>${fdur(dur)}</b></div><div><small>Volumen</small><b>${fmtKg(vol(w))}</b></div>
+      <div><small>Series</small><b>${nsets(w)}</b></div><div><small>Récords</small><b>${prs.length ? '🏅 ' + prs.length : '—'}</b></div></div>
+    ${same ? `<div class="card"><h3>Comparado con la última vez</h3><small>${fdate(same.start)}</small>
+      <div class="stats" style="margin-top:8px"><div><small>Volumen</small><b>${arrow(pct(vol(w), vol(same)) / 100)} ${pct(vol(w), vol(same)) > 0 ? '+' : ''}${pct(vol(w), vol(same))} %</b></div>
+      <div><small>Duración</small><b>${fdur(Math.abs(dur - (same.end - same.start)))} ${dur >= same.end - same.start ? 'más' : 'menos'}</b></div></div></div>` : ''}
+    ${prs.length ? `<div class="card"><h3>🏅 Récords de hoy</h3>${prs.map(r => `<div class="row" style="margin-top:8px">${thumb(ex(r.it.exId))}
+      <span style="flex:1">${esc(ex(r.it.exId).name)}<br><small>${fmt(r.top.kg)} kg × ${r.top.reps} · 1RM ~${fmt(e1rm(r.top))} kg (+${fmt(r.gain)})</small></span></div>`).join('')}</div>` : ''}
+    ${ups.length ? `<div class="card prog up"><h3>⬆️ La próxima vez, sube peso</h3>${ups.map(r => `<p style="margin:6px 0">${esc(ex(r.it.exId).name)}: <b>${fmt(r.next)} kg × ${REP_MIN}</b></p>`).join('')}
+      <small>Hiciste ${REP_MAX} reps en todas las series.</small></div>` : ''}
+    <div class="card"><h3>Ejercicios</h3>${rows.map(r => `<div class="row" style="margin-top:8px">${thumb(ex(r.it.exId))}
+      <span style="flex:1">${esc(ex(r.it.exId).name)}<br><small>${work(r.it.sets).length} series${r.top ? ` · mejor ${fmt(r.top.kg)} × ${r.top.reps}` : ''}</small></span>${arrow(r.diff)}</div>`).join('')}
+      <small style="display:block;margin-top:8px">↑ ↓ = comparado con la última vez que hiciste cada ejercicio</small></div>
+    ${muscleBars(w.items.map(it => ({ exId: it.exId, n: work(it.sets).length })))}
+    <button class="btn wide" data-a="shareResumen" data-id="${w.id}">📤 Guardar o compartir imagen</button>
+    <button class="btn ghost wide" data-a="openW" data-id="${w.id}">Ver detalle de las series</button>
+    <button class="btn ghost wide" data-tab="inicio">Listo</button>`];
+}
+// Imagen 1080×1350 del resumen para guardar o compartir.
+async function shareResumen(id) {
+  const w = S.workouts.find(x => x.id === id), { rows, prs } = summary(w);
+  const c = document.createElement('canvas'); c.width = 1080; c.height = 1350;
+  const g = c.getContext('2d'), F = 'system-ui, -apple-system, Segoe UI, Roboto, sans-serif';
+  const fit = (t, max) => { while (g.measureText(t).width > max && t.length > 4) t = t.slice(0, -2) + '…'; return t; };
+  g.fillStyle = '#111214'; g.fillRect(0, 0, 1080, 1350);
+  g.fillStyle = '#ff7a1a'; [[80, 92, 18, 60], [182, 92, 18, 60], [101, 104, 12, 36], [167, 104, 12, 36], [113, 116, 54, 12]].forEach(([x, y, ww, h]) => g.fillRect(x, y, ww, h));
+  g.font = `800 52px ${F}`; g.fillText('FORJA', 230, 140);
+  g.fillStyle = '#f1f2f4'; g.font = `800 64px ${F}`; g.fillText(fit(w.name, 920), 80, 260);
+  g.fillStyle = '#8b909a'; g.font = `400 34px ${F}`; g.fillText(new Date(w.start).toLocaleDateString('es', { weekday: 'long', day: 'numeric', month: 'long' }), 80, 315);
+  [['Duración', fdur(w.end - w.start)], ['Volumen', fmtKg(vol(w))], ['Series', String(nsets(w))], ['Récords', prs.length ? '🏅 ' + prs.length : '—']].forEach(([l, v], i) => {
+    const x = 80 + i * 235; g.fillStyle = '#1b1d21'; g.fillRect(x, 370, 215, 150);
+    g.fillStyle = '#8b909a'; g.font = `400 28px ${F}`; g.fillText(l, x + 22, 418); g.fillStyle = '#f1f2f4'; g.font = `800 40px ${F}`; g.fillText(fit(v, 180), x + 22, 480);
+  });
+  let y = 590;
+  const section = (title, list, right) => { // título naranja y filas "ejercicio ··· dato" mientras quepan
+    if (!list.length || y > 1150) return;
+    g.fillStyle = '#ff7a1a'; g.font = `800 36px ${F}`; g.fillText(title, 80, y); y += 58;
+    for (const r of list) {
+      if (y > 1200) break;
+      g.fillStyle = '#f1f2f4'; g.font = `600 34px ${F}`; g.fillText(fit(ex(r.it.exId).name, 600), 80, y);
+      g.fillStyle = '#8b909a'; g.font = `400 32px ${F}`; g.textAlign = 'right'; g.fillText(right(r), 1000, y); g.textAlign = 'left'; y += 56;
+    }
+    y += 30;
+  };
+  const best = r => r.top ? `${fmt(r.top.kg)} kg × ${r.top.reps}` : `${work(r.it.sets).length} series`;
+  section('🏅 Récords de hoy', prs, best);
+  section('⬆️ Próxima vez, sube a', rows.filter(r => r.up), r => `${fmt(r.next)} kg × ${REP_MIN}`);
+  section(prs.length ? 'Resto de ejercicios' : 'Ejercicios', rows.filter(r => !r.pr), best);
+  g.fillStyle = '#8b909a'; g.font = `400 28px ${F}`; g.fillText('Entrenado con Forja', 80, 1280);
+  const blob = await new Promise(ok => c.toBlob(ok, 'image/png')), file = new File([blob], 'forja-entreno.png', { type: 'image/png' });
+  try {
+    if (navigator.canShare?.({ files: [file] })) return await navigator.share({ files: [file], title: w.name });
+  } catch (e) { if (e.name === 'AbortError') return; }
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = file.name; a.click();
+}
 function pWorkout() {
   const w = S.workouts.find(x => x.id === V.id);
   if (!w) { V = { p: 'inicio', tab: 'inicio' }; return pInicio(); }
@@ -518,6 +623,7 @@ function pWorkout() {
       <b class="exname" data-a="openEx" data-id="${it.exId}" style="display:flex;align-items:center;gap:10px">${thumb(ex(it.exId))}${esc(ex(it.exId).name)}</b>
       <table>${it.sets.map((s, j) => `<tr><td class="t-${s.t || ''}">${setLabel(it.sets, j)}</td><td>${fmt(s.kg)} kg × ${s.reps}${s.rpe ? ` <small>RPE ${fmt(s.rpe)}</small>` : ''}</td><td>${s.t === 'w' ? 'calentamiento' : `1RM ~${fmt(e1rm(s))}`}</td></tr>`).join('')}</table></div>`).join('')}
     ${muscleBars(w.items.map(it => ({ exId: it.exId, n: it.sets.length })))}
+    <button class="btn ghost wide" data-a="openResumen" data-id="${w.id}">📊 Ver resumen</button>
     <button class="btn wide" data-a="repeatW" data-id="${w.id}">Repetir este entreno</button>
     <button class="btn ghost wide" data-a="asRoutine" data-id="${w.id}">Guardar como rutina</button>
     <button class="btn danger wide" data-a="delW" data-id="${w.id}">Eliminar</button>`];
@@ -1032,10 +1138,10 @@ const A = {
   toggle: d => {
     const it = S.active.items[d.i], s = it.sets[d.j];
     if (!s.done) {
-      const p = prevSets(it.exId)[d.j];
-      if (!(s.reps > 0)) s.reps = p ? p.reps : parseInt(it.target) || ''; // anterior, o el mínimo del objetivo "8-10"
+      const p = prevSets(it.exId)[d.j], sg = suggest(it, d.j);
+      if (!(s.reps > 0)) s.reps = sg?.reps ?? (p ? p.reps : parseInt(it.target) || ''); // sugerencia, anterior o mínimo del objetivo
       if (!(s.reps > 0)) return toast('Escribe las repeticiones');
-      if (s.kg === '') s.kg = p ? p.kg : 0; // sin peso = peso corporal
+      if (s.kg === '') s.kg = sg?.kg ?? (p ? p.kg : 0); // sin peso = peso corporal
       s.done = true;
       const midSuperset = it.ss && S.active.items[+d.i + 1]?.ss === it.ss; // en superserie se descansa tras el último ejercicio
       if (it.rest && !midSuperset) {
@@ -1117,10 +1223,12 @@ const A = {
     const prs = items.filter(it => { const b = bestE1rm(it.exId); return b > 0 && Math.max(0, ...work(it.sets).map(e1rm)) > b; }).map(it => ex(it.exId).name);
     const w = { id: a.id, name: a.name.trim() || 'Entreno', start: a.start, end: Date.now(), items };
     S.workouts.unshift(w); S.active = null; save(); scheduleRest(null);
-    go('workout', { id: w.id, tab: 'inicio' });
+    go('resumen', { id: w.id, tab: 'inicio' });
     toast(prs.length ? '🏆 ¡Nuevo récord en ' + prs.join(', ') + '!' : '💪 Entreno guardado');
   },
   openW: d => go('workout', { id: d.id }),
+  openResumen: d => go('resumen', { id: d.id }),
+  shareResumen: d => shareResumen(d.id),
   openEx: d => go('ejercicio', { id: d.id }),
   delW: d => { if (!confirm('¿Eliminar este entreno del historial?')) return; gone('w:' + d.id); S.workouts = S.workouts.filter(w => w.id !== d.id); save(); go('inicio'); },
   addCustom: () => {

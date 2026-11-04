@@ -1,6 +1,6 @@
 // La app (HTML/JS) se pide siempre a internet y solo se usa la copia guardada sin conexión;
 // las fotos de ejercicios se sirven desde la copia (no cambian). Cambia C en cada versión.
-const C = 'forja-v20';
+const C = 'forja-v21';
 const SHELL = ['./', 'index.html', 'ejercicios.js', 'manifest.json', 'icon.svg', 'icon-192.png', 'apple-touch-icon.png'];
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(C).then(c => c.addAll(SHELL.map(u => new Request(u, { cache: 'reload' })))));
