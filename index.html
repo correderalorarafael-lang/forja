@@ -164,7 +164,7 @@ table{width:100%;border-collapse:collapse;font-size:15px}td{padding:4px 0}td:las
   <button class="btn wide" data-a="wheelDone">Listo</button></div></div>
 <script src="ejercicios.js"></script>
 <script>
-const VERSION = 18; // súbelo junto con C en sw.js
+const VERSION = 19; // súbelo junto con C en sw.js
 const MUSCLES =['Pecho','Espalda','Hombros','Brazos','Piernas','Core'];
 const RESTS = Array.from({ length: 41 }, (_, i) => i * 15); // 0 a 10 min, de 15 en 15 s
 const RING = 119.38; // perímetro del anillo de descanso (2π·19)
@@ -740,7 +740,27 @@ function bell(t0) {
 const audioOn = () => { try { ac ??= new AudioContext(); ac.resume(); } catch {} };
 document.addEventListener('touchend', audioOn, { once: true });
 document.addEventListener('click', audioOn, { once: true });
+// --- aviso con el móvil bloqueado: el servidor forja-push (Cloudflare) envía el push a la hora exacta ---
+const PUSH_URL = 'https://forja-push.forja-push.workers.dev'; // servidor forja-push (Cloudflare)
+const VAPID_PUBLIC = 'BEvuR-UIkZdGorQHM2bYE0CEsRHFREodvOL7dS_Kb0m0AFIqYTw7lewUETtHR12wWigrnYScTfA-JWVdkvKX4gs';
+const deviceId = (() => { try { let d = localStorage.getItem('forja-dispositivo'); if (!d) localStorage.setItem('forja-dispositivo', d = crypto.randomUUID()); return d; } catch { return null; } })();
+let pushed = false; // hay un aviso programado en el servidor
+async function pushSub() {
+  if (!PUSH_URL || !('PushManager' in window) || window.Notification?.permission !== 'granted') return null;
+  const reg = await navigator.serviceWorker.ready, key = Uint8Array.from(atob(VAPID_PUBLIC.replace(/-/g, '+').replace(/_/g, '/')), c => c.charCodeAt(0));
+  return await reg.pushManager.getSubscription() || reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: key });
+}
+async function scheduleRest(at) { // at = null para cancelar
+  try {
+    if (!PUSH_URL || !deviceId || (!at && !pushed)) return;
+    const sub = at ? await pushSub() : null;
+    if (at && !sub) return;
+    const r = await fetch(PUSH_URL + '/descanso', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: deviceId, sub: sub?.toJSON(), at }) });
+    pushed = !!at && r.ok;
+  } catch { pushed = false; } // sin conexión: queda el aviso local de la app abierta
+}
 async function notifyRest() {
+  if (pushed) { pushed = false; return; } // ya llega el del servidor; así no salen dos
   if (!('Notification' in window) || Notification.permission !== 'granted') return;
   const reg = await navigator.serviceWorker?.getRegistration();
   reg?.showNotification('Forja', { body: '¡Descanso terminado! Vuelve a tu entrenamiento 💪', icon: 'icon-192.png', badge: 'icon-192.png',
@@ -867,7 +887,7 @@ const MENU = {
   fDel: d => { S.folders = S.folders.filter(f => f.id !== d.id); S.routines.forEach(r => { if (r.folder === d.id) delete r.folder; }); save(); render(); toast('Carpeta eliminada; sus rutinas siguen en Mis rutinas'); },
   discardAsk: () => openMenu('¿Seguro que quieres descartar el entrenamiento?', `<p class="muted">Se perderán todas las series de este entreno.</p>`
     + mItem('🗑', 'Descartar entrenamiento', 'discardYes', '', 'danger') + mItem('↩', 'Cancelar', 'done')),
-  discardYes: () => { S.active = null; save(); render(); toast('Entreno descartado'); },
+  discardYes: () => { S.active = null; save(); render(); toast('Entreno descartado'); scheduleRest(null); },
 };
 
 // --- acciones ---
@@ -945,7 +965,7 @@ const A = {
       s.done = true;
       const midSuperset = it.ss && S.active.items[+d.i + 1]?.ss === it.ss; // en superserie se descansa tras el último ejercicio
       if (it.rest && !midSuperset) {
-        S.active.restEnd = Date.now() + it.rest * 1000; S.active.restTotal = it.rest;
+        S.active.restEnd = Date.now() + it.rest * 1000; S.active.restTotal = it.rest; scheduleRest(S.active.restEnd);
         if (window.Notification?.permission === 'default') Notification.requestPermission(); // se pide con un toque, como exige iOS
       }
     } else s.done = false;
@@ -995,10 +1015,10 @@ const A = {
     S.workouts = [...S.workouts, ...H.ws].sort((a, b) => b.start - a.start);
     const n = H.ws.length; H = null; save(); toast(`${n} entrenos importados`); go('inicio');
   },
-  restAdj: d => { const a = S.active; a.restEnd += d.d * 1000; a.restTotal = Math.max(a.restTotal, (a.restEnd - Date.now()) / 1000); save(); },
-  restSkip: () => { S.active.restEnd = null; save(); tick(); },
+  restAdj: d => { const a = S.active; a.restEnd += d.d * 1000; a.restTotal = Math.max(a.restTotal, (a.restEnd - Date.now()) / 1000); save(); scheduleRest(a.restEnd > Date.now() ? a.restEnd : null); },
+  restSkip: () => { S.active.restEnd = null; save(); tick(); scheduleRest(null); },
   goSub: d => go(d.p, { tab: 'perfil' }),
-  notifAsk: async () => { await Notification.requestPermission(); render(); },
+  notifAsk: async () => { await Notification.requestPermission(); pushSub().catch(() => {}); render(); },
   bellTest: () => alarm(),
   pMetric: d => { pMetric = d.k; render(); },
   photoPick: () => $('#photoFile').click(),
@@ -1021,7 +1041,7 @@ const A = {
     if (pending && !confirm(`Hay ${pending} series sin marcar ✓ que no se guardarán. ¿Terminar?`)) return;
     const prs = items.filter(it => { const b = bestE1rm(it.exId); return b > 0 && Math.max(0, ...work(it.sets).map(e1rm)) > b; }).map(it => ex(it.exId).name);
     const w = { id: a.id, name: a.name.trim() || 'Entreno', start: a.start, end: Date.now(), items };
-    S.workouts.unshift(w); S.active = null; save();
+    S.workouts.unshift(w); S.active = null; save(); scheduleRest(null);
     go('workout', { id: w.id, tab: 'inicio' });
     toast(prs.length ? '🏆 ¡Nuevo récord en ' + prs.join(', ') + '!' : '💪 Entreno guardado');
   },
