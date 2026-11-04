@@ -141,6 +141,9 @@ button.n{background:none;border:0;padding:8px 0;cursor:pointer;font:inherit;font
 .cnt{display:flex;align-items:center;gap:6px}.cnt b{min-width:22px;text-align:center}
 .field{width:100%;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px;margin:6px 0}
 table{width:100%;border-collapse:collapse;font-size:15px}td{padding:4px 0}td:last-child{text-align:right;color:var(--mut)}
+/* iOS: con el teclado abierto lo fijado abajo flota a media pantalla; se oculta la barra y el descanso sube */
+body.kb nav{display:none}
+body.kb #rest{top:calc(env(safe-area-inset-top) + 64px);bottom:auto}
 /* --- transiciones entre pantallas --- */
 ::view-transition-group(root){animation-duration:.32s;animation-timing-function:cubic-bezier(.22,.8,.24,1)}
 ::view-transition-old(root),::view-transition-new(root){animation-duration:.32s;animation-timing-function:cubic-bezier(.22,.8,.24,1);mix-blend-mode:normal}
@@ -190,7 +193,7 @@ button:active:not(:disabled),.tap:active{transform:scale(.97)}
   <button class="btn wide" data-a="wheelDone">Listo</button></div></div>
 <script src="ejercicios.js"></script>
 <script>
-const VERSION = 23; // súbelo junto con C en sw.js
+const VERSION = 24; // súbelo junto con C en sw.js
 const MUSCLES =['Pecho','Espalda','Hombros','Brazos','Piernas','Core'];
 const RESTS = Array.from({ length: 41 }, (_, i) => i * 15); // 0 a 10 min, de 15 en 15 s
 const RING = 119.38; // perímetro del anillo de descanso (2π·19)
@@ -1473,6 +1476,13 @@ if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
   navigator.serviceWorker.register('sw.js');
   navigator.serviceWorker.addEventListener('controllerchange', () => location.reload()); // versión nueva instalada
 }
+// Teclado abierto = el área visible es bastante más baja que la ventana.
+function fitViewport() { const vv = window.visualViewport; if (vv) document.body.classList.toggle('kb', innerHeight - vv.height > 120); }
+window.visualViewport?.addEventListener('resize', fitViewport);
+document.addEventListener('focusout', () => setTimeout(() => { // al cerrar el teclado iOS a veces deja la página descolocada
+  fitViewport();
+  if (!document.activeElement?.matches('input, textarea, select')) scrollTo(scrollX, scrollY);
+}, 80));
 render();
 sync(); // al abrir: trae lo de otros dispositivos y sube lo de este
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') sync(); });
