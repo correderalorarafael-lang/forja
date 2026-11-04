@@ -137,7 +137,7 @@ button.n{background:none;border:0;padding:8px 0;cursor:pointer;font:inherit;font
 #toast.on{opacity:1}
 .chart{width:100%;height:auto;background:var(--bg);border-radius:12px}.ct{fill:var(--mut);font-size:11px}
 .prog{margin:8px 0 2px;padding:8px 12px;border-radius:10px;background:var(--bg);font-size:14px;color:var(--txt)}.prog.up{background:rgba(255,122,26,.15);border:1px solid var(--acc)}
-.hero{text-align:center}.upc{color:var(--ok)}.downc{color:var(--bad)}.mut{color:var(--mut)}
+.hero{text-align:center}.bigkg{font-size:44px;font-weight:900;margin:2px 0}.cmpemoji{font-size:72px;line-height:1.25;margin:6px 0}.upc{color:var(--ok)}.downc{color:var(--bad)}.mut{color:var(--mut)}
 .cnt{display:flex;align-items:center;gap:6px}.cnt b{min-width:22px;text-align:center}
 .field{width:100%;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px;margin:6px 0}
 table{width:100%;border-collapse:collapse;font-size:15px}td{padding:4px 0}td:last-child{text-align:right;color:var(--mut)}
@@ -166,7 +166,7 @@ table{width:100%;border-collapse:collapse;font-size:15px}td{padding:4px 0}td:las
   <button class="btn wide" data-a="wheelDone">Listo</button></div></div>
 <script src="ejercicios.js"></script>
 <script>
-const VERSION = 21; // súbelo junto con C en sw.js
+const VERSION = 22; // súbelo junto con C en sw.js
 const MUSCLES =['Pecho','Espalda','Hombros','Brazos','Piernas','Core'];
 const RESTS = Array.from({ length: 41 }, (_, i) => i * 15); // 0 a 10 min, de 15 en 15 s
 const RING = 119.38; // perímetro del anillo de descanso (2π·19)
@@ -550,6 +550,15 @@ function summary(w) {
   });
   return { rows, same, prs: rows.filter(r => r.pr), ups: rows.filter(r => r.up) };
 }
+// Peso aproximado de cada cosa, de mayor a menor: se elige la mayor que cabe en el volumen del entreno.
+const COMPARE = [[150000, '🐋', 'una ballena azul', 'ballenas azules'], [36000, '🚛', 'un tráiler', 'tráileres'], [12000, '🚌', 'un autobús', 'autobuses'],
+  [8000, '🦖', 'un tiranosaurio', 'tiranosaurios'], [5000, '🐘', 'un elefante', 'elefantes'], [2500, '🚐', 'una furgoneta', 'furgonetas'],
+  [1300, '🚗', 'un coche', 'coches'], [700, '🐄', 'una vaca', 'vacas'], [400, '🐻', 'un oso', 'osos'], [200, '🏍️', 'una moto', 'motos'],
+  [40, '🐕', 'un perro grande', 'perros grandes'], [0, '🏋️', 'unas pesas', 'pesas']];
+function compare(kg) {
+  const [k, emoji, one, many] = COMPARE.find(([k]) => kg >= k), n = k ? Math.floor(kg / k) : 1;
+  return { emoji, n, text: n >= 2 ? `¡Como levantar ${n} ${many}!` : `¡Como levantar ${one}!` };
+}
 const pct = (a, b) => b ? Math.round((a - b) / b * 100) : 0;
 const arrow = d => d == null ? '' : d > .05 ? '<b class="upc">↑</b>' : d < -.05 ? '<b class="downc">↓</b>' : '<b class="mut">=</b>';
 function pResumen() {
@@ -561,6 +570,9 @@ function pResumen() {
       <b>${esc(w.name)}</b><br><small>${new Date(w.start).toLocaleString('es', { dateStyle: 'full', timeStyle: 'short' })}</small></div>
     <div class="card stats"><div><small>Duración</small><b>${fdur(dur)}</b></div><div><small>Volumen</small><b>${fmtKg(vol(w))}</b></div>
       <div><small>Series</small><b>${nsets(w)}</b></div><div><small>Récords</small><b>${prs.length ? '🏅 ' + prs.length : '—'}</b></div></div>
+    ${(c => `<div class="card hero"><small>Hoy has levantado</small><div class="bigkg">${fmtKg(vol(w))}</div>
+      <div class="cmpemoji" aria-hidden="true">${c.emoji.repeat(Math.min(3, c.n))}</div><b>${c.text}</b>
+      <button class="btn ghost wide" data-a="shareResumen" data-id="${w.id}" data-k="cmp">📤 Compartir esta imagen</button></div>`)(compare(vol(w)))}
     ${same ? `<div class="card"><h3>Comparado con la última vez</h3><small>${fdate(same.start)}</small>
       <div class="stats" style="margin-top:8px"><div><small>Volumen</small><b>${arrow(pct(vol(w), vol(same)) / 100)} ${pct(vol(w), vol(same)) > 0 ? '+' : ''}${pct(vol(w), vol(same))} %</b></div>
       <div><small>Duración</small><b>${fdur(Math.abs(dur - (same.end - same.start)))} ${dur >= same.end - same.start ? 'más' : 'menos'}</b></div></div></div>` : ''}
@@ -572,12 +584,12 @@ function pResumen() {
       <span style="flex:1">${esc(ex(r.it.exId).name)}<br><small>${work(r.it.sets).length} series${r.top ? ` · mejor ${fmt(r.top.kg)} × ${r.top.reps}` : ''}</small></span>${arrow(r.diff)}</div>`).join('')}
       <small style="display:block;margin-top:8px">↑ ↓ = comparado con la última vez que hiciste cada ejercicio</small></div>
     ${muscleBars(w.items.map(it => ({ exId: it.exId, n: work(it.sets).length })))}
-    <button class="btn wide" data-a="shareResumen" data-id="${w.id}">📤 Guardar o compartir imagen</button>
+    <button class="btn wide" data-a="shareResumen" data-id="${w.id}">📤 Compartir el resumen</button>
     <button class="btn ghost wide" data-a="openW" data-id="${w.id}">Ver detalle de las series</button>
     <button class="btn ghost wide" data-tab="inicio">Listo</button>`];
 }
 // Imagen 1080×1350 del resumen para guardar o compartir.
-async function shareResumen(id) {
+async function shareResumen(id, kind = 'resumen') {
   const w = S.workouts.find(x => x.id === id), { rows, prs } = summary(w);
   const c = document.createElement('canvas'); c.width = 1080; c.height = 1350;
   const g = c.getContext('2d'), F = 'system-ui, -apple-system, Segoe UI, Roboto, sans-serif';
@@ -585,29 +597,43 @@ async function shareResumen(id) {
   g.fillStyle = '#111214'; g.fillRect(0, 0, 1080, 1350);
   g.fillStyle = '#ff7a1a'; [[80, 92, 18, 60], [182, 92, 18, 60], [101, 104, 12, 36], [167, 104, 12, 36], [113, 116, 54, 12]].forEach(([x, y, ww, h]) => g.fillRect(x, y, ww, h));
   g.font = `800 52px ${F}`; g.fillText('FORJA', 230, 140);
-  g.fillStyle = '#f1f2f4'; g.font = `800 64px ${F}`; g.fillText(fit(w.name, 920), 80, 260);
-  g.fillStyle = '#8b909a'; g.font = `400 34px ${F}`; g.fillText(new Date(w.start).toLocaleDateString('es', { weekday: 'long', day: 'numeric', month: 'long' }), 80, 315);
-  [['Duración', fdur(w.end - w.start)], ['Volumen', fmtKg(vol(w))], ['Series', String(nsets(w))], ['Récords', prs.length ? '🏅 ' + prs.length : '—']].forEach(([l, v], i) => {
-    const x = 80 + i * 235; g.fillStyle = '#1b1d21'; g.fillRect(x, 370, 215, 150);
-    g.fillStyle = '#8b909a'; g.font = `400 28px ${F}`; g.fillText(l, x + 22, 418); g.fillStyle = '#f1f2f4'; g.font = `800 40px ${F}`; g.fillText(fit(v, 180), x + 22, 480);
-  });
-  let y = 590;
-  const section = (title, list, right) => { // título naranja y filas "ejercicio ··· dato" mientras quepan
-    if (!list.length || y > 1150) return;
-    g.fillStyle = '#ff7a1a'; g.font = `800 36px ${F}`; g.fillText(title, 80, y); y += 58;
-    for (const r of list) {
-      if (y > 1200) break;
-      g.fillStyle = '#f1f2f4'; g.font = `600 34px ${F}`; g.fillText(fit(ex(r.it.exId).name, 600), 80, y);
-      g.fillStyle = '#8b909a'; g.font = `400 32px ${F}`; g.textAlign = 'right'; g.fillText(right(r), 1000, y); g.textAlign = 'left'; y += 56;
-    }
-    y += 30;
-  };
-  const best = r => r.top ? `${fmt(r.top.kg)} kg × ${r.top.reps}` : `${work(r.it.sets).length} series`;
-  section('🏅 Récords de hoy', prs, best);
-  section('⬆️ Próxima vez, sube a', rows.filter(r => r.up), r => `${fmt(r.next)} kg × ${REP_MIN}`);
-  section(prs.length ? 'Resto de ejercicios' : 'Ejercicios', rows.filter(r => !r.pr), best);
-  g.fillStyle = '#8b909a'; g.font = `400 28px ${F}`; g.fillText('Entrenado con Forja', 80, 1280);
-  const blob = await new Promise(ok => c.toBlob(ok, 'image/png')), file = new File([blob], 'forja-entreno.png', { type: 'image/png' });
+  if (kind === 'cmp') { // "Hoy has levantado X kg · ¡Como levantar N elefantes!"
+    const cm = compare(vol(w)), E = '"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif';
+    g.textAlign = 'center';
+    g.fillStyle = '#8b909a'; g.font = `500 44px ${F}`; g.fillText('Hoy has levantado', 540, 330);
+    g.fillStyle = '#f1f2f4'; g.font = `900 150px ${F}`; g.fillText(fmtKg(vol(w)), 540, 490);
+    const n = Math.min(3, cm.n), size = n === 1 ? 300 : n === 2 ? 240 : 190;
+    g.font = `${size}px ${E}`; g.fillText(cm.emoji.repeat(n), 540, 860);
+    g.fillStyle = '#ff7a1a'; g.font = `800 58px ${F}`; g.fillText(fit(cm.text, 960), 540, 1010);
+    g.fillStyle = '#8b909a'; g.font = `400 34px ${F}`; g.fillText(fit(`${w.name} · ${new Date(w.start).toLocaleDateString('es', { day: 'numeric', month: 'long' })}`, 960), 540, 1080);
+    g.textAlign = 'left';
+    if (S.profile.name) { g.fillStyle = '#8b909a'; g.font = `500 34px ${F}`; g.textAlign = 'right'; g.fillText(fit(S.profile.name, 500), 1000, 1280); g.textAlign = 'left'; }
+    g.font = `400 28px ${F}`; g.fillText('Entrenado con Forja', 80, 1280);
+  } else {
+    g.fillStyle = '#f1f2f4'; g.font = `800 64px ${F}`; g.fillText(fit(w.name, 920), 80, 260);
+    g.fillStyle = '#8b909a'; g.font = `400 34px ${F}`; g.fillText(new Date(w.start).toLocaleDateString('es', { weekday: 'long', day: 'numeric', month: 'long' }), 80, 315);
+    [['Duración', fdur(w.end - w.start)], ['Volumen', fmtKg(vol(w))], ['Series', String(nsets(w))], ['Récords', prs.length ? '🏅 ' + prs.length : '—']].forEach(([l, v], i) => {
+      const x = 80 + i * 235; g.fillStyle = '#1b1d21'; g.fillRect(x, 370, 215, 150);
+      g.fillStyle = '#8b909a'; g.font = `400 28px ${F}`; g.fillText(l, x + 22, 418); g.fillStyle = '#f1f2f4'; g.font = `800 40px ${F}`; g.fillText(fit(v, 180), x + 22, 480);
+    });
+    let y = 590;
+    const section = (title, list, right) => { // título naranja y filas "ejercicio ··· dato" mientras quepan
+      if (!list.length || y > 1150) return;
+      g.fillStyle = '#ff7a1a'; g.font = `800 36px ${F}`; g.fillText(title, 80, y); y += 58;
+      for (const r of list) {
+        if (y > 1200) break;
+        g.fillStyle = '#f1f2f4'; g.font = `600 34px ${F}`; g.fillText(fit(ex(r.it.exId).name, 600), 80, y);
+        g.fillStyle = '#8b909a'; g.font = `400 32px ${F}`; g.textAlign = 'right'; g.fillText(right(r), 1000, y); g.textAlign = 'left'; y += 56;
+      }
+      y += 30;
+    };
+    const best = r => r.top ? `${fmt(r.top.kg)} kg × ${r.top.reps}` : `${work(r.it.sets).length} series`;
+    section('🏅 Récords de hoy', prs, best);
+    section('⬆️ Próxima vez, sube a', rows.filter(r => r.up), r => `${fmt(r.next)} kg × ${REP_MIN}`);
+    section(prs.length ? 'Resto de ejercicios' : 'Ejercicios', rows.filter(r => !r.pr), best);
+    g.fillStyle = '#8b909a'; g.font = `400 28px ${F}`; g.fillText('Entrenado con Forja', 80, 1280);
+  }
+  const blob = await new Promise(ok => c.toBlob(ok, 'image/png')), file = new File([blob], kind === 'cmp' ? 'forja-levantado.png' : 'forja-entreno.png', { type: 'image/png' });
   try {
     if (navigator.canShare?.({ files: [file] })) return await navigator.share({ files: [file], title: w.name });
   } catch (e) { if (e.name === 'AbortError') return; }
@@ -1228,7 +1254,7 @@ const A = {
   },
   openW: d => go('workout', { id: d.id }),
   openResumen: d => go('resumen', { id: d.id }),
-  shareResumen: d => shareResumen(d.id),
+  shareResumen: d => shareResumen(d.id, d.k),
   openEx: d => go('ejercicio', { id: d.id }),
   delW: d => { if (!confirm('¿Eliminar este entreno del historial?')) return; gone('w:' + d.id); S.workouts = S.workouts.filter(w => w.id !== d.id); save(); go('inicio'); },
   addCustom: () => {
