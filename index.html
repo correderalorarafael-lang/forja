@@ -13,9 +13,9 @@
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{height:100%;overflow:hidden;overscroll-behavior:none}
 body{margin:0;background:var(--bg);color:var(--txt);font:16px/1.4 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;display:flex;flex-direction:column;height:100vh;height:100dvh}
-header{view-transition-name:cabecera;flex:none;z-index:5;background:var(--bg);display:flex;align-items:center;justify-content:space-between;padding:12px 16px;padding-top:calc(12px + env(safe-area-inset-top));border-bottom:1px solid var(--line)}
+header{flex:none;z-index:5;background:var(--bg);display:flex;align-items:center;justify-content:space-between;padding:12px 16px;padding-top:calc(12px + env(safe-area-inset-top));border-bottom:1px solid var(--line)}
 h1{font-size:22px;margin:0}h2{font-size:18px;margin:20px 0 8px}
-main{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior-y:contain;padding:12px max(16px,calc((100% - 608px) / 2)) 120px}
+main{flex:1;min-height:0;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;overscroll-behavior-y:contain;padding:12px max(16px,calc((100% - 608px) / 2)) 120px}
 button,input,select{font:inherit;color:inherit}
 .btn{background:var(--acc);color:#111;border:0;border-radius:12px;padding:12px 16px;font-weight:700;cursor:pointer}
 .btn.big{width:100%;padding:18px;font-size:18px}.btn.wide{width:100%;margin-top:10px}
@@ -90,14 +90,14 @@ button,input,select{font:inherit;color:inherit}
 .chip{background:var(--card);border:1px solid var(--line);border-radius:999px;padding:6px 12px;white-space:nowrap;cursor:pointer;font-size:14px}
 .chip.on{background:var(--acc);color:#111;border-color:var(--acc)}
 .li{display:flex;justify-content:space-between;width:100%;background:none;border:0;border-bottom:1px solid var(--line);padding:14px 2px;text-align:left;cursor:pointer}
-nav{view-transition-name:barra;flex:none;z-index:6;display:flex;position:relative;background:var(--card);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom)}
+nav{flex:none;z-index:6;display:flex;position:relative;background:var(--card);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom)}
 nav button{position:relative;z-index:1;flex:1;background:none;border:0;transition:color .3s;color:var(--mut);padding:10px 0 12px;font-size:12px;cursor:pointer}
 nav button b{display:block;font-size:20px}nav button.on{color:var(--acc)}
 /* resaltado que se desliza bajo la pestaña activa */
 #navpill{position:absolute;top:6px;left:8px;width:calc((100% - 16px) / 3);height:54px;border-radius:999px;background:rgba(255,122,26,.13);transition:transform .42s cubic-bezier(.3,1.25,.4,1),opacity .25s;pointer-events:none}
 ::view-transition-old(barra){animation:none;opacity:0}::view-transition-new(barra){animation:none}
-@media (prefers-reduced-motion:reduce){#navpill{transition:none}}
-#rest{view-transition-name:descanso;position:fixed;left:8px;right:8px;bottom:calc(70px + env(safe-area-inset-bottom));z-index:7;max-width:624px;margin:0 auto;background:rgba(38,41,47,.92);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border:1px solid var(--line);border-radius:20px;padding:10px 12px;display:flex;align-items:center;gap:10px;box-shadow:0 10px 30px rgba(0,0,0,.45);transform:translateY(160%);opacity:0;visibility:hidden;pointer-events:none;transition:transform .35s cubic-bezier(.2,.9,.25,1),opacity .25s,visibility 0s .35s}
+@media (prefers-reduced-motion:reduce){#navpill{transition:transform .28s ease,opacity .25s}}
+#rest{position:fixed;left:8px;right:8px;bottom:calc(70px + env(safe-area-inset-bottom));z-index:7;max-width:624px;margin:0 auto;background:rgba(38,41,47,.92);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border:1px solid var(--line);border-radius:20px;padding:10px 12px;display:flex;align-items:center;gap:10px;box-shadow:0 10px 30px rgba(0,0,0,.45);transform:translateY(160%);opacity:0;visibility:hidden;pointer-events:none;transition:transform .35s cubic-bezier(.2,.9,.25,1),opacity .25s,visibility 0s .35s}
 #rest.show{transform:none;opacity:1;visibility:visible;pointer-events:auto;transition-delay:0s}
 .ring{width:48px;height:48px;transform:rotate(-90deg);flex:none}.ring circle{fill:none;stroke-width:4.5}
 .ring .trk{stroke:var(--line)}#restring{stroke:var(--acc);stroke-linecap:round;stroke-dasharray:119.38}
@@ -133,7 +133,7 @@ button.n{background:none;border:0;padding:8px 0;cursor:pointer;font:inherit;font
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:0 10px}
 #banner{flex:none;display:block;width:100%;background:var(--acc);color:#111;border:0;font-weight:700;padding:10px;cursor:pointer}
 #sheet{position:fixed;inset:0;z-index:9;background:rgba(0,0,0,.6);display:flex;align-items:flex-end}
-#sheet .in{background:var(--bg);width:100%;max-width:640px;margin:0 auto;height:88vh;border-radius:18px 18px 0 0;padding:14px 16px;display:flex;flex-direction:column}
+#sheet .in{background:var(--bg);width:100%;max-width:640px;margin:0 auto;height:88vh;border-radius:18px 18px 0 0;padding:14px 16px;display:flex;flex-direction:column;animation:sheetup .3s cubic-bezier(.2,.9,.25,1)}
 #pickList{overflow-y:auto;flex:1}
 #ptr{position:fixed;top:calc(env(safe-area-inset-top) - 40px);left:50%;width:40px;height:40px;border-radius:50%;background:var(--card);border:1px solid var(--line);color:var(--acc);display:grid;place-items:center;font-size:22px;font-weight:800;z-index:20;opacity:0;transform:translate(-50%,0);pointer-events:none;box-shadow:0 6px 18px rgba(0,0,0,.4)}
 #ptr.ready{background:var(--acc);color:#111}#ptr.spin{animation:ptrspin .6s linear infinite}
@@ -159,6 +159,24 @@ html[data-nav=back]::view-transition-old(root){animation-name:vt-sale-der}
 html[data-nav=back]::view-transition-new(root){animation-name:vt-entra-izq}
 html[data-nav=fade]::view-transition-old(root){animation:.18s ease-out both vt-desvanece}
 html[data-nav=fade]::view-transition-new(root){animation:.26s cubic-bezier(.22,.8,.24,1) both vt-aparece}
+html[data-nav=soft]::view-transition-old(root){animation:.2s ease-out both vt-desvanece}
+html[data-nav=soft]::view-transition-new(root){animation:.2s ease-out both vt-funde}
+@keyframes vt-funde{from{opacity:0}}
+/* paneles inferiores: entran y salen deslizando, con el fondo fundido */
+#menu:not([hidden]),#wheel:not([hidden]),#sheet:not([hidden]){animation:fondo-in .25s ease-out}
+@keyframes fondo-in{from{background:rgba(0,0,0,0)}}
+#menu.closing,#wheel.closing,#sheet.closing{animation:fondo-out .22s ease-in forwards}
+@keyframes fondo-out{to{background:rgba(0,0,0,0)}}
+#menu.closing .in,#wheel.closing .in,#sheet.closing .in{animation:panel-out .22s cubic-bezier(.4,0,1,1) forwards}
+@keyframes panel-out{to{transform:translateY(100%)}}
+/* lo recién añadido aparece; la serie completada se tiñe poco a poco */
+.setwrap.fresh{animation:fila-in .28s cubic-bezier(.22,.8,.24,1)}
+@keyframes fila-in{from{opacity:0;transform:translateY(-8px)}}
+.card.fresh{animation:tarjeta-in .32s cubic-bezier(.22,.8,.24,1)}
+@keyframes tarjeta-in{from{opacity:0;transform:translateY(16px) scale(.98)}}
+.set.done.justdone{animation:hecho .45s ease-out}
+@keyframes hecho{from{background:var(--card)}}
+.noterow.fresh{animation:fila-in .25s ease-out}
 ::view-transition-old(cabecera),::view-transition-new(cabecera){animation-duration:.2s}
 @keyframes vt-entra-der{from{transform:translateX(100%)}}
 @keyframes vt-sale-izq{to{transform:translateX(-28%);opacity:.6}}
@@ -166,14 +184,18 @@ html[data-nav=fade]::view-transition-new(root){animation:.26s cubic-bezier(.22,.
 @keyframes vt-sale-der{to{transform:translateX(100%)}}
 @keyframes vt-desvanece{to{opacity:0}}
 @keyframes vt-aparece{from{opacity:0;transform:translateY(10px)}}
-#view.enter-fwd{animation:vt-entra-der .32s cubic-bezier(.22,.8,.24,1)}
-#view.enter-back{animation:vt-entra-izq .32s cubic-bezier(.22,.8,.24,1)}
-#view.enter-fade{animation:vt-aparece .26s cubic-bezier(.22,.8,.24,1)}
+#view.enter-fwd{animation:entra-der .34s cubic-bezier(.22,.8,.24,1)}
+#view.enter-back{animation:entra-izq .34s cubic-bezier(.22,.8,.24,1)}
+#view.enter-fade{animation:vt-aparece .28s cubic-bezier(.22,.8,.24,1)}
+#view.enter-soft{animation:suave .22s ease-out}
+@keyframes entra-der{from{transform:translateX(38%);opacity:0}}
+@keyframes entra-izq{from{transform:translateX(-26%);opacity:0}}
+@keyframes suave{from{opacity:.35}}
 /* respuesta al pulsar */
 button,.tap{transition:transform .14s cubic-bezier(.3,.7,.4,1),background-color .2s,opacity .2s}
 button:active:not(:disabled),.tap:active{transform:scale(.97)}
 .btn:active:not(:disabled){opacity:.88}
-@media (prefers-reduced-motion:reduce){button,.tap{transition:none}button:active,.tap:active{transform:none}}
+
 </style>
 </head>
 <body>
@@ -200,7 +222,7 @@ button:active:not(:disabled),.tap:active{transform:scale(.97)}
   <button class="btn wide" data-a="wheelDone">Listo</button></div></div>
 <script src="ejercicios.js"></script>
 <script>
-const VERSION = 26; // súbelo junto con C en sw.js
+const VERSION = 27; // súbelo junto con C en sw.js
 const MUSCLES =['Pecho','Espalda','Hombros','Brazos','Piernas','Core'];
 const RESTS = Array.from({ length: 41 }, (_, i) => i * 15); // 0 a 10 min, de 15 en 15 s
 const RING = 119.38; // perímetro del anillo de descanso (2π·19)
@@ -291,11 +313,14 @@ const F = { lib: { q: '', m: '' }, pick: { q: '', m: '' } };
 // Cambio de pantalla animado: 'fwd' entra desde la derecha, 'back' vuelve hacia la izquierda, 'fade' entre pestañas.
 // Usa View Transitions (iOS 18+, Chrome); en navegadores sin ellas, una animación CSS del contenido.
 const calm = matchMedia('(prefers-reduced-motion: reduce)');
-function navigate(kind, update) {
-  if (calm.matches) return update();
-  if (document.startViewTransition) { document.documentElement.dataset.nav = kind; document.startViewTransition(update); return; }
+function vt(kind, update) { // anima solo el contenido (#view): la cabecera y la barra de abajo no se tocan
   update();
-  const v = $('#view'); v.classList.remove('enter-fwd', 'enter-back', 'enter-fade'); void v.offsetWidth; v.classList.add('enter-' + kind);
+  const v = $('#view'); v.classList.remove('enter-fwd', 'enter-back', 'enter-fade', 'enter-soft'); void v.offsetWidth; v.classList.add('enter-' + kind);
+}
+const smooth = update => vt('soft', update); // re-pinta la pantalla actual con un fundido suave
+function navigate(kind, update) {
+  if (calm.matches) kind = 'fade'; // con "Reducir movimiento": fundido en vez de deslizar
+  vt(kind, update);
 }
 const backStack = []; // pantallas anteriores, para que "atrás" vuelva a la de antes y no a la pestaña
 function go(p, extra = {}) {
@@ -305,7 +330,7 @@ function go(p, extra = {}) {
   V = { p, tab: sub ? V.tab : p, ...extra };
   navigate(kind, () => { render(); $('#view').scrollTop = 0; });
 }
-addEventListener('popstate', () => { if (menu) closeMenu(); else if (wheel) closeWheel(); else if (picker) { picker = null; render(); if (pickedScroll) $('#view').scrollTop = 1e9; pickedScroll = false; } else if (!TABS.includes(V.p)) { V = backStack.pop() || { p: V.tab, tab: V.tab }; navigate('back', () => { render(); $('#view').scrollTop = 0; }); } });
+addEventListener('popstate', () => { if (menu) closeMenu(); else if (wheel) closeWheel(); else if (picker) { slideOut($('#sheet'), () => { picker = null; render(); if (pickedScroll) $('#view').scrollTo({ top: 1e9, behavior: 'smooth' }); pickedScroll = false; }); } else if (!TABS.includes(V.p)) { V = backStack.pop() || { p: V.tab, tab: V.tab }; navigate('back', () => { render(); $('#view').scrollTop = 0; }); } });
 
 function render() {
   const pages = { inicio: pInicio, perfil: pPerfil, stats: pStats, calendario: pCalendario, entreno: pEntreno, ejercicios: pEjercicios, ajustes: pAjustes, rutina: pRutina, rutinaVer: pRutinaVer, importar: pImportar, importarHist: pImportarHist, cuerpo: pCuerpo, discos: pDiscos, workout: pWorkout, resumen: pResumen, ejercicio: pEjercicio };
@@ -320,6 +345,7 @@ function render() {
   renderSheet(); tick();
   try { sessionStorage.setItem(VIEW_KEY, JSON.stringify(V)); } catch {}
   if ($('#gbtn')) mountGoogle();
+  fresh = null; // las animaciones de "recién añadido" solo se aplican una vez
 }
 function toast(msg) { const t = $('#toast'); t.textContent = msg; t.classList.add('on'); clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.remove('on'), 3000); }
 
@@ -360,7 +386,7 @@ function exCard(it, i) {
   const prev = prevSets(it.exId);
   const e = ex(it.exId), list = S.active.items;
   const note = S.notes[it.exId] || '', prog = progression(it.exId);
-  return `<div class="card ${it.ss ? 'ss' : ''}">
+  return `<div class="card ${it.ss ? 'ss' : ''} ${fresh === 'ex:' + i ? 'fresh' : ''}">
     ${it.ss ? `<small class="sslabel">🔗 Superserie ${ssLetter(list, i)}</small>` : ''}
     <div class="row between ex-head" data-drag="workout" data-i="${i}">
       <b class="exname" data-a="openEx" data-id="${it.exId}">${thumb(e)}${esc(e.name)}</b>
@@ -368,9 +394,9 @@ function exCard(it, i) {
     <div class="row" style="flex-wrap:wrap;gap:8px;margin-top:4px">${restStepper('restStep', i, it.rest)}
       <button class="restchip" data-a="noteOpen" data-id="${it.exId}">📝 Nota</button></div>
     ${prog ? `<p class="prog ${prog.up ? 'up' : ''}">${prog.msg}</p>` : ''}
-    ${note || noteOpen === it.exId ? `<div class="noterow"><span aria-hidden="true">🗒</span><input class="note" data-note="${it.exId}" id="note-${it.exId}" value="${esc(note)}" placeholder="Escribe una nota (asiento, agarre…)"></div>` : ''}
+    ${note || noteOpen === it.exId ? `<div class="noterow ${fresh === 'note:' + it.exId ? 'fresh' : ''}"><span aria-hidden="true">🗒</span><input class="note" data-note="${it.exId}" id="note-${it.exId}" value="${esc(note)}" placeholder="Escribe una nota (asiento, agarre…)"></div>` : ''}
     <div class="sh"><span>Serie</span><span>Anterior</span><span>kg</span><span>Reps</span><span>RPE</span><span>✓</span></div>
-    ${it.sets.map((s, j) => { const p = prev[j], sg = suggest(it, j); return `<div class="setwrap"><div class="swbg" aria-hidden="true">🗑 Borrar</div><div class="set ${s.done ? 'done' : ''}" data-si="${i}" data-sj="${j}">
+    ${it.sets.map((s, j) => { const p = prev[j], sg = suggest(it, j); return `<div class="setwrap ${fresh === `set:${i}:${j}` ? 'fresh' : ''}"><div class="swbg" aria-hidden="true">🗑 Borrar</div><div class="set ${s.done ? 'done' : ''} ${fresh === `done:${i}:${j}` ? 'justdone' : ''}" data-si="${i}" data-sj="${j}">
       <button class="n t-${s.t || ''}" data-a="setMenu" data-i="${i}" data-j="${j}" aria-label="Opciones de la serie">${setLabel(it.sets, j)}</button>
       <button class="prev" data-a="usePrev" data-i="${i}" data-j="${j}" ${p ? '' : 'disabled'}>${p ? `${fmt(p.kg)}×${p.reps}` : '—'}</button>
       <input inputmode="decimal" data-i="${i}" data-j="${j}" data-f="kg" value="${s.kg === '' ? '' : fmt(s.kg)}" placeholder="${sg ? fmt(sg.kg) : p ? fmt(p.kg) : ''}" aria-label="kg">
@@ -1061,7 +1087,7 @@ function openWheel(mode, i) {
   wheelPaint();
   history.pushState(null, '');
 }
-function closeWheel() { wheel = null; $('#wheel').hidden = true; render(); }
+function closeWheel() { wheel = null; slideOut($('#wheel'), render); }
 function wheelPaint() {
   const el = wl(), pos = el.scrollTop / WH, k = Math.round(pos);
   for (let j = Math.max(0, k - 4); j <= k + 4 && j < el.children.length; j++) { // solo las filas visibles
@@ -1085,12 +1111,15 @@ wl().addEventListener('click', e => { const it = e.target.closest('.wi'); if (it
 $('#wheel').addEventListener('click', e => { if (e.target.id === 'wheel') history.back(); }); // tocar fuera: cancelar
 
 // --- menú inferior: botones con data-mi cierran el menú y ejecutan MENU[mi]; los data-a (↑↓ al reordenar) no lo cierran ---
+let fresh = null; // 'set:i:j', 'ex:i', 'done:i:j' o 'note:id' → se anima en el próximo pintado
 let menu = null, noteOpen = null, replaceIdx = null, pickedScroll = false;
 function openMenu(title, html) {
   $('#menuTitle').textContent = title; $('#menuBody').innerHTML = html; $('#menu').hidden = false;
   menu = { run: null }; history.pushState(null, '');
 }
-function closeMenu() { const run = menu.run; menu = null; $('#menu').hidden = true; run ? run() : render(); }
+// Cerrar un panel: primero se desliza hacia abajo y luego desaparece.
+function slideOut(el, done) { el.classList.add('closing'); setTimeout(() => { el.classList.remove('closing'); el.hidden = true; done(); }, 210); }
+function closeMenu() { const run = menu.run; menu = null; slideOut($('#menu'), () => run ? run() : render()); }
 $('#menu').addEventListener('click', e => {
   if (e.target.id === 'menu') return history.back(); // tocar fuera
   const b = e.target.closest('[data-mi]'); if (!b) return;
@@ -1114,17 +1143,17 @@ const MENU = {
   done: () => render(),
   reorder: () => openMenu('Reordenar ejercicios', reorderHtml()),
   replace: d => { replaceIdx = +d.i; picker = 'replace'; F.pick = { q: '', m: '' }; history.pushState(null, ''); render(); },
-  ss: d => { linkSS(S.active.items, +d.i); save(); render(); },
+  ss: d => { linkSS(S.active.items, +d.i); save(); smooth(render); },
   warm: d => { // 2 series de calentamiento al principio, al 50 % y 70 % del peso de trabajo
     const it = S.active.items[d.i], base = +work(it.sets)[0]?.kg || +work(prevSets(it.exId))[0]?.kg || 0;
     const r = p => base ? Math.round(base * p / 2.5) * 2.5 : '';
     it.sets.unshift({ kg: r(.5), reps: 10, done: false, t: 'w' }, { kg: r(.7), reps: 6, done: false, t: 'w' });
-    save(); render(); toast('Añadidas 2 series de calentamiento');
+    save(); smooth(render); toast('Añadidas 2 series de calentamiento');
   },
   rm: d => A.rmEx(d),
-  type: d => { const s = S.active.items[d.i].sets[d.j]; if (d.v) s.t = d.v; else delete s.t; save(); render(); },
-  delset: d => { S.active.items[d.i].sets.splice(d.j, 1); save(); render(); },
-  rpe: d => { const s = S.active.items[d.i].sets[d.j]; if (d.v) s.rpe = +d.v; else delete s.rpe; save(); render(); },
+  type: d => { const s = S.active.items[d.i].sets[d.j]; if (d.v) s.t = d.v; else delete s.t; save(); smooth(render); },
+  delset: d => { S.active.items[d.i].sets.splice(d.j, 1); save(); smooth(render); },
+  rpe: d => { const s = S.active.items[d.i].sets[d.j]; if (d.v) s.rpe = +d.v; else delete s.rpe; save(); smooth(render); },
   save: () => A.finish(),
   rEdit: d => A.editRoutine(d),
   syncNow: async () => { toast('Sincronizando…'); await sync(); render(); toast(acct ? '✅ Sincronizado' : 'Vuelve a iniciar sesión'); },
@@ -1200,14 +1229,14 @@ const A = {
   closePick: () => history.back(),
   pickEx: d => {
     if (picker === 'replace') { const it = S.active.items[replaceIdx]; it.exId = d.id; it.sets = it.sets.map(() => ({ kg: '', reps: '', done: false })); }
-    else if (picker === 'workout') S.active.items.push({ exId: d.id, rest: S.rest, sets: Array.from({ length: prevSets(d.id).length || 1 }, () => ({ kg: '', reps: '', done: false })) });
+    else if (picker === 'workout') fresh = 'ex:' + S.active.items.length, S.active.items.push({ exId: d.id, rest: S.rest, sets: Array.from({ length: prevSets(d.id).length || 1 }, () => ({ kg: '', reps: '', done: false })) });
     else draft.items.push({ exId: d.id, sets: 3, reps: '', rest: S.rest });
     // la lista se cierra en popstate: si se cerrase aquí, ese "atrás" sacaría del editor de rutinas
     save(); pickedScroll = picker !== 'replace'; history.back();
   },
-  chip: d => { F[d.k].m = d.m; if (d.k === 'pick') renderSheet(); else render(); },
+  chip: d => { F[d.k].m = d.m; if (d.k === 'pick') renderSheet(); else smooth(render); },
   rmEx: d => { const it = S.active.items[d.i]; if (it.sets.some(s => s.done) && !confirm('¿Quitar este ejercicio y sus series?')) return; S.active.items.splice(d.i, 1); save(); render(); },
-  addSet: d => { S.active.items[d.i].sets.push({ kg: '', reps: '', done: false }); save(); render(); },
+  addSet: d => { const l = S.active.items[d.i].sets; l.push({ kg: '', reps: '', done: false }); fresh = `set:${d.i}:${l.length - 1}`; save(); render(); },
   usePrev: d => { const it = S.active.items[d.i], p = prevSets(it.exId)[d.j]; Object.assign(it.sets[d.j], { kg: p.kg, reps: p.reps }); save(); render(); },
   toggle: d => {
     const it = S.active.items[d.i], s = it.sets[d.j];
@@ -1216,7 +1245,7 @@ const A = {
       if (!(s.reps > 0)) s.reps = sg?.reps ?? (p ? p.reps : parseInt(it.target) || ''); // sugerencia, anterior o mínimo del objetivo
       if (!(s.reps > 0)) return toast('Escribe las repeticiones');
       if (s.kg === '') s.kg = sg?.kg ?? (p ? p.kg : 0); // sin peso = peso corporal
-      s.done = true;
+      s.done = true; fresh = `done:${d.i}:${d.j}`;
       const midSuperset = it.ss && S.active.items[+d.i + 1]?.ss === it.ss; // en superserie se descansa tras el último ejercicio
       if (it.rest && !midSuperset) {
         S.active.restEnd = Date.now() + it.rest * 1000; S.active.restTotal = it.rest; scheduleRest(S.active.restEnd);
@@ -1244,10 +1273,10 @@ const A = {
       ${s.rpe ? `<button class="btn ghost wide" data-mi="rpe" ${a} data-v="">Quitar RPE</button>` : ''}`);
   },
   moveEx: d => { const l = S.active.items, i = +d.i, j = i + +d.d; [l[i], l[j]] = [l[j], l[i]]; save(); $('#menuBody').innerHTML = reorderHtml(); },
-  noteOpen: d => { noteOpen = d.id; render(); $('#note-' + d.id)?.focus(); },
+  noteOpen: d => { noteOpen = d.id; fresh = 'note:' + d.id; render(); $('#note-' + d.id)?.focus(); },
   ssLinkR: d => { linkSS(draft.items, +d.i); render(); },
   openDiscos: () => go('discos'),
-  bodyM: d => { bodyM = d.k; render(); },
+  bodyM: d => { bodyM = d.k; smooth(render); },
   bodySave: () => {
     const e = { t: new Date(($('#bDate').value || today()) + 'T12:00').getTime() };
     for (const [k] of BODY) { const v = $('#b_' + k).value.replace(',', '.').trim(); if (v !== '' && !isNaN(v)) e[k] = +v; }
@@ -1275,12 +1304,12 @@ const A = {
   goSub: d => go(d.p, { tab: 'perfil' }),
   notifAsk: async () => { await Notification.requestPermission(); pushSub().catch(() => {}); render(); },
   bellTest: () => alarm(),
-  pMetric: d => { pMetric = d.k; render(); },
+  pMetric: d => { pMetric = d.k; smooth(render); },
   photoPick: () => $('#photoFile').click(),
   nameEdit: () => { const n = prompt('Tu nombre', S.profile.name); if (n != null) { S.profile.name = n.trim(); save(); render(); } },
-  calMove: d => { calM = new Date(calM.getFullYear(), calM.getMonth() + +d.d, 1); render(); },
+  calMove: d => { calM = new Date(calM.getFullYear(), calM.getMonth() + +d.d, 1); smooth(render); },
   newFolder: () => { if (newFolder()) render(); },
-  folderToggle: d => { const f = S.folders.find(x => x.id === d.id); f.closed = !f.closed; f.u = Date.now(); save(); render(); },
+  folderToggle: d => { const f = S.folders.find(x => x.id === d.id); f.closed = !f.closed; f.u = Date.now(); save(); smooth(render); },
   folderMenu: d => { const f = S.folders.find(x => x.id === d.id), a = `data-id="${d.id}"`;
     openMenu(f.name, mItem('✎', 'Renombrar carpeta', 'fRename', a) + mItem('🗑', 'Eliminar carpeta', 'fDel', a, 'danger')); },
   routineMenu: d => { const r = S.routines.find(x => x.id === d.id), a = `data-id="${d.id}"`;
