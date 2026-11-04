@@ -136,6 +136,7 @@ button.n{background:none;border:0;padding:8px 0;cursor:pointer;font:inherit;font
 #sheet .in{background:var(--bg);width:100%;max-width:640px;margin:0 auto;height:88vh;border-radius:18px 18px 0 0;padding:14px 16px;display:flex;flex-direction:column;animation:sheetup .3s cubic-bezier(.2,.9,.25,1)}
 #pickList{overflow-y:auto;flex:1}
 #ptr{position:fixed;top:calc(env(safe-area-inset-top) - 40px);left:50%;width:40px;height:40px;border-radius:50%;background:var(--card);border:1px solid var(--line);color:var(--acc);display:grid;place-items:center;font-size:22px;font-weight:800;z-index:20;opacity:0;transform:translate(-50%,0);pointer-events:none;box-shadow:0 6px 18px rgba(0,0,0,.4)}
+#ptr.settle{transition:transform .35s cubic-bezier(.22,.8,.24,1),opacity .3s}
 #ptr.ready{background:var(--acc);color:var(--on-acc)}#ptr.spin{animation:ptrspin .6s linear infinite}
 @keyframes ptrspin{from{transform:translate(-50%,110px) rotate(0)}to{transform:translate(-50%,110px) rotate(360deg)}}
 #toast{position:fixed;top:calc(70px + env(safe-area-inset-top));left:50%;transform:translateX(-50%);background:#222836;border:1px solid var(--line);padding:10px 16px;border-radius:12px;z-index:10;opacity:0;transition:opacity .2s;pointer-events:none;max-width:90vw}
@@ -222,7 +223,7 @@ button:active:not(:disabled),.tap:active{transform:scale(.97)}
   <button class="btn wide" data-a="wheelDone">Listo</button></div></div>
 <script src="ejercicios.js"></script>
 <script>
-const VERSION = 29; // súbelo junto con C en sw.js
+const VERSION = 30; // súbelo junto con C en sw.js
 const MUSCLES =['Pecho','Espalda','Hombros','Brazos','Piernas','Core'];
 const RESTS = Array.from({ length: 41 }, (_, i) => i * 15); // 0 a 10 min, de 15 en 15 s
 const RING = 119.38; // perímetro del anillo de descanso (2π·19)
@@ -1429,8 +1430,19 @@ document.addEventListener('pointercancel', swEnd);
 // --- deslizar hacia abajo desde arriba del todo para recargar (en la app instalada no hay botón de recargar) ---
 const PULL = 70, ptr = $('#ptr');
 let pull = null;
+// Refresco sin recargar la página (recargar hacía parpadear todo): trae la nube, busca versión nueva
+// y vuelve a pintar con un fundido. Si hay versión nueva, el service worker recarga una vez para instalarla.
+async function softRefresh() {
+  const t0 = Date.now();
+  try { await Promise.all([sync(), navigator.serviceWorker?.getRegistration().then(r => r?.update())]); } catch {}
+  await new Promise(r => setTimeout(r, Math.max(0, 650 - (Date.now() - t0)))); // que la rueda se vea girar un momento
+  smooth(render);
+  $('#view').scrollTo({ top: 0, behavior: 'smooth' });
+  ptr.classList.remove('spin', 'ready'); ptr.style.opacity = 0;
+}
 const pullReset = () => { pull = null; ptr.style.transform = ''; ptr.style.opacity = 0; ptr.classList.remove('ready'); };
 document.addEventListener('touchstart', e => {
+  ptr.classList.remove('settle');
   if ($('#view').scrollTop > 0 || e.touches.length > 1 || drag || menu || wheel || picker || !$('#reorder').hidden) return;
   pull = { y: e.touches[0].clientY, d: 0 };
 }, { passive: true });
@@ -1446,7 +1458,8 @@ document.addEventListener('touchmove', e => {
 }, { passive: true });
 document.addEventListener('touchend', () => {
   if (!pull) return;
-  if (pull.d > PULL) { pull = null; ptr.style.transform = ''; ptr.classList.add('spin'); setTimeout(() => location.reload(), 300); }
+  ptr.classList.add('settle'); // al soltar, la rueda vuelve a su sitio deslizándose
+  if (pull.d > PULL) { pull = null; ptr.style.transform = ''; ptr.classList.add('spin'); softRefresh(); }
   else pullReset();
 });
 document.addEventListener('contextmenu', e => { if (e.target.closest('[data-drag]')) e.preventDefault(); });
