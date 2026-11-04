@@ -11,10 +11,11 @@
 <style>
 :root{--bg:#111214;--card:#1b1d21;--line:#2a2d33;--txt:#f1f2f4;--mut:#8b909a;--acc:#ff7a1a;--ok:#2fbf71;--bad:#ff5a5a}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-body{margin:0;background:var(--bg);color:var(--txt);font:16px/1.4 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;padding-bottom:calc(140px + env(safe-area-inset-bottom))}
-header{view-transition-name:cabecera;position:sticky;top:0;z-index:5;background:var(--bg);display:flex;align-items:center;justify-content:space-between;padding:12px 16px;padding-top:calc(12px + env(safe-area-inset-top));border-bottom:1px solid var(--line)}
+html,body{height:100%;overflow:hidden;overscroll-behavior:none}
+body{margin:0;background:var(--bg);color:var(--txt);font:16px/1.4 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;display:flex;flex-direction:column;height:100vh;height:100dvh}
+header{view-transition-name:cabecera;flex:none;z-index:5;background:var(--bg);display:flex;align-items:center;justify-content:space-between;padding:12px 16px;padding-top:calc(12px + env(safe-area-inset-top));border-bottom:1px solid var(--line)}
 h1{font-size:22px;margin:0}h2{font-size:18px;margin:20px 0 8px}
-main{max-width:640px;margin:0 auto;padding:12px 16px}
+main{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior-y:contain;padding:12px max(16px,calc((100% - 608px) / 2)) 120px}
 button,input,select{font:inherit;color:inherit}
 .btn{background:var(--acc);color:#111;border:0;border-radius:12px;padding:12px 16px;font-weight:700;cursor:pointer}
 .btn.big{width:100%;padding:18px;font-size:18px}.btn.wide{width:100%;margin-top:10px}
@@ -89,7 +90,7 @@ button,input,select{font:inherit;color:inherit}
 .chip{background:var(--card);border:1px solid var(--line);border-radius:999px;padding:6px 12px;white-space:nowrap;cursor:pointer;font-size:14px}
 .chip.on{background:var(--acc);color:#111;border-color:var(--acc)}
 .li{display:flex;justify-content:space-between;width:100%;background:none;border:0;border-bottom:1px solid var(--line);padding:14px 2px;text-align:left;cursor:pointer}
-nav{view-transition-name:barra;position:fixed;bottom:0;left:0;right:0;z-index:6;display:flex;background:var(--card);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom)}
+nav{view-transition-name:barra;flex:none;z-index:6;display:flex;background:var(--card);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom)}
 nav button{flex:1;background:none;border:0;color:var(--mut);padding:10px 0 12px;font-size:12px;cursor:pointer}
 nav button b{display:block;font-size:20px}nav button.on{color:var(--acc)}
 #rest{view-transition-name:descanso;position:fixed;left:8px;right:8px;bottom:calc(70px + env(safe-area-inset-bottom));z-index:7;max-width:624px;margin:0 auto;background:rgba(38,41,47,.92);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border:1px solid var(--line);border-radius:20px;padding:10px 12px;display:flex;align-items:center;gap:10px;box-shadow:0 10px 30px rgba(0,0,0,.45);transform:translateY(160%);opacity:0;visibility:hidden;pointer-events:none;transition:transform .35s cubic-bezier(.2,.9,.25,1),opacity .25s,visibility 0s .35s}
@@ -126,7 +127,7 @@ button.n{background:none;border:0;padding:8px 0;cursor:pointer;font:inherit;font
 .barend{width:46px;height:12px;background:#8a8f98;border-radius:3px;flex:none}
 .plate{width:24px;border-radius:5px;display:grid;place-items:center;font-size:11px;font-weight:800;flex:none;writing-mode:vertical-rl;transform:rotate(180deg)}
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:0 10px}
-#banner{display:block;width:100%;background:var(--acc);color:#111;border:0;font-weight:700;padding:10px;cursor:pointer}
+#banner{flex:none;display:block;width:100%;background:var(--acc);color:#111;border:0;font-weight:700;padding:10px;cursor:pointer}
 #sheet{position:fixed;inset:0;z-index:9;background:rgba(0,0,0,.6);display:flex;align-items:flex-end}
 #sheet .in{background:var(--bg);width:100%;max-width:640px;margin:0 auto;height:88vh;border-radius:18px 18px 0 0;padding:14px 16px;display:flex;flex-direction:column}
 #pickList{overflow-y:auto;flex:1}
@@ -143,6 +144,7 @@ button.n{background:none;border:0;padding:8px 0;cursor:pointer;font:inherit;font
 table{width:100%;border-collapse:collapse;font-size:15px}td{padding:4px 0}td:last-child{text-align:right;color:var(--mut)}
 /* iOS: con el teclado abierto lo fijado abajo flota a media pantalla; se oculta la barra y el descanso sube */
 body.kb nav{display:none}
+body.kb main{padding-bottom:24px}
 body.kb #rest{top:calc(env(safe-area-inset-top) + 64px);bottom:auto}
 /* --- transiciones entre pantallas --- */
 ::view-transition-group(root){animation-duration:.32s;animation-timing-function:cubic-bezier(.22,.8,.24,1)}
@@ -193,7 +195,7 @@ button:active:not(:disabled),.tap:active{transform:scale(.97)}
   <button class="btn wide" data-a="wheelDone">Listo</button></div></div>
 <script src="ejercicios.js"></script>
 <script>
-const VERSION = 24; // súbelo junto con C en sw.js
+const VERSION = 25; // súbelo junto con C en sw.js
 const MUSCLES =['Pecho','Espalda','Hombros','Brazos','Piernas','Core'];
 const RESTS = Array.from({ length: 41 }, (_, i) => i * 15); // 0 a 10 min, de 15 en 15 s
 const RING = 119.38; // perímetro del anillo de descanso (2π·19)
@@ -296,9 +298,9 @@ function go(p, extra = {}) {
   if (sub) { history.pushState(null, ''); backStack.push(V); } else backStack.length = 0;
   const kind = sub ? 'fwd' : TABS.includes(V.p) ? 'fade' : 'back';
   V = { p, tab: sub ? V.tab : p, ...extra };
-  navigate(kind, () => { scrollTo(0, 0); render(); });
+  navigate(kind, () => { render(); $('#view').scrollTop = 0; });
 }
-addEventListener('popstate', () => { if (menu) closeMenu(); else if (wheel) closeWheel(); else if (picker) { picker = null; render(); if (pickedScroll) scrollTo(0, document.body.scrollHeight); pickedScroll = false; } else if (!TABS.includes(V.p)) { V = backStack.pop() || { p: V.tab, tab: V.tab }; navigate('back', () => { scrollTo(0, 0); render(); }); } });
+addEventListener('popstate', () => { if (menu) closeMenu(); else if (wheel) closeWheel(); else if (picker) { picker = null; render(); if (pickedScroll) $('#view').scrollTop = 1e9; pickedScroll = false; } else if (!TABS.includes(V.p)) { V = backStack.pop() || { p: V.tab, tab: V.tab }; navigate('back', () => { render(); $('#view').scrollTop = 0; }); } });
 
 function render() {
   const pages = { inicio: pInicio, perfil: pPerfil, stats: pStats, calendario: pCalendario, entreno: pEntreno, ejercicios: pEjercicios, ajustes: pAjustes, rutina: pRutina, rutinaVer: pRutinaVer, importar: pImportar, importarHist: pImportarHist, cuerpo: pCuerpo, discos: pDiscos, workout: pWorkout, resumen: pResumen, ejercicio: pEjercicio };
@@ -1392,14 +1394,14 @@ const PULL = 70, ptr = $('#ptr');
 let pull = null;
 const pullReset = () => { pull = null; ptr.style.transform = ''; ptr.style.opacity = 0; ptr.classList.remove('ready'); };
 document.addEventListener('touchstart', e => {
-  if (scrollY > 0 || e.touches.length > 1 || drag || menu || wheel || picker || !$('#reorder').hidden) return;
+  if ($('#view').scrollTop > 0 || e.touches.length > 1 || drag || menu || wheel || picker || !$('#reorder').hidden) return;
   pull = { y: e.touches[0].clientY, d: 0 };
 }, { passive: true });
 document.addEventListener('touchmove', e => {
   if (!pull) return;
   if (drag || sw?.on) return pullReset(); // está reordenando o borrando una serie
   const d = e.touches[0].clientY - pull.y;
-  if (d <= 0 || scrollY > 0) { pull.d = 0; ptr.style.transform = ''; ptr.style.opacity = 0; return; }
+  if (d <= 0 || $('#view').scrollTop > 0) { pull.d = 0; ptr.style.transform = ''; ptr.style.opacity = 0; return; }
   pull.d = Math.min(d * .5, 110);
   ptr.style.transform = `translate(-50%, ${pull.d}px) rotate(${pull.d * 3}deg)`;
   ptr.style.opacity = Math.min(1, pull.d / PULL);
@@ -1481,7 +1483,7 @@ function fitViewport() { const vv = window.visualViewport; if (vv) document.body
 window.visualViewport?.addEventListener('resize', fitViewport);
 document.addEventListener('focusout', () => setTimeout(() => { // al cerrar el teclado iOS a veces deja la página descolocada
   fitViewport();
-  if (!document.activeElement?.matches('input, textarea, select')) scrollTo(scrollX, scrollY);
+  if (!document.activeElement?.matches('input, textarea, select')) scrollTo(0, 0); // la ventana nunca debe quedar desplazada
 }, 80));
 render();
 sync(); // al abrir: trae lo de otros dispositivos y sube lo de este
