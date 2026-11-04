@@ -122,6 +122,13 @@ nav button b{display:block;font-size:20px}nav button.on{color:var(--acc)}
 .tag.main{background:var(--acc);color:var(--on-acc);border-color:var(--acc);font-weight:700}
 .li{align-items:center;gap:12px}.li span{flex:1}
 h3{margin:0;font-size:16px}
+.mslides{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;margin:0 -14px;overscroll-behavior-x:contain}
+.mslides::-webkit-scrollbar{display:none}
+.mslide{flex:0 0 100%;scroll-snap-align:start;padding:0 14px;box-sizing:border-box}
+.mtag{display:block;margin-top:6px;color:var(--acc);font-weight:600}
+.dots{display:flex;justify-content:center;gap:6px;margin-top:12px}
+.dots i{width:7px;height:7px;border-radius:4px;background:var(--line);cursor:pointer;transition:width .25s ease,background .25s}
+.dots i.on{width:18px;background:var(--acc)}
 button.n{background:none;border:0;padding:8px 0;cursor:pointer;font:inherit;font-weight:800;color:var(--mut)}
 .t-w{color:#f5c518!important}.t-f{color:var(--bad)!important}.t-d{color:#a78bfa!important}
 .card.ss{border-left:4px solid #a78bfa}.sslabel{display:block;color:#a78bfa;font-weight:700;margin-bottom:6px}.li.ssli{border-left:3px solid #a78bfa;padding-left:8px}
@@ -223,7 +230,7 @@ button:active:not(:disabled),.tap:active{transform:scale(.97)}
   <button class="btn wide" data-a="wheelDone">Listo</button></div></div>
 <script src="ejercicios.js"></script>
 <script>
-const VERSION = 30; // súbelo junto con C en sw.js
+const VERSION = 31; // súbelo junto con C en sw.js
 const MUSCLES =['Pecho','Espalda','Hombros','Brazos','Piernas','Core'];
 const RESTS = Array.from({ length: 41 }, (_, i) => i * 15); // 0 a 10 min, de 15 en 15 s
 const RING = 119.38; // perímetro del anillo de descanso (2π·19)
@@ -421,14 +428,20 @@ function muscleShare(items) {
     (e.sec || []).forEach(m => t[m] = (t[m] || 0) + n / 2);
   }
   const total = Object.values(t).reduce((a, b) => a + b, 0);
-  return Object.entries(t).sort((a, b) => b[1] - a[1]).map(([m, v]) => [m, v / total * 100]);
+  return Object.entries(t).sort((a, b) => b[1] - a[1]).map(([m, v]) => [m, v / total * 100, v]); // [músculo, %, series]
 }
 function muscleBars(items, title = 'Músculos trabajados') {
   const rows = muscleShare(items);
   if (!rows.length) return '';
-  return `<div class="card"><h3>${title}</h3><div class="bars">${rows.map(([m, p]) => `<div class="bar-row">
-    <span>${esc(m)}</span><div class="bar"><i style="width:${p / rows[0][1] * 100}%"></i></div><b>${Math.round(p)}%</b></div>`).join('')}</div>
-    <small>Reparto según las series: principal cuenta 1, secundario 0,5.</small></div>`;
+  const bars = (k, label) => `<div class="bars">${rows.map(r => `<div class="bar-row">
+    <span>${esc(r[0])}</span><div class="bar"><i style="width:${r[k] / rows[0][k] * 100}%"></i></div><b>${label(r[k])}</b></div>`).join('')}</div>`;
+  // Dos vistas que se deslizan: % del trabajo y nº de series (principal 1, secundario 0,5); los puntos dicen en cuál estás.
+  return `<div class="card"><h3>${title}</h3>
+    <div class="mslides">
+      <div class="mslide"><small class="mtag">% del trabajo</small>${bars(1, v => Math.round(v) + '%')}<small>Desliza para ver las series por músculo →</small></div>
+      <div class="mslide"><small class="mtag">Series</small>${bars(2, v => fmt(v))}<small>Principal cuenta 1 serie, secundario 0,5.</small></div>
+    </div>
+    <div class="dots" role="tablist"><i class="on" data-a="mslide" data-k="0" role="tab" aria-label="Ver porcentajes"></i><i data-a="mslide" data-k="1" role="tab" aria-label="Ver series"></i></div></div>`;
 }
 function pRutinaVer() {
   const r = S.routines.find(x => x.id === V.id);
@@ -1304,6 +1317,7 @@ const A = {
   restAdj: d => { const a = S.active; a.restEnd += d.d * 1000; a.restTotal = Math.max(a.restTotal, (a.restEnd - Date.now()) / 1000); save(); scheduleRest(a.restEnd > Date.now() ? a.restEnd : null); },
   restSkip: () => { S.active.restEnd = null; save(); tick(); scheduleRest(null); },
   goSub: d => go(d.p, { tab: 'perfil' }),
+  mslide: (d, el) => { const sl = el.closest('.card').querySelector('.mslides'); sl.scrollTo({ left: d.k * sl.clientWidth, behavior: 'smooth' }); },
   notifAsk: async () => { await Notification.requestPermission(); pushSub().catch(() => {}); render(); },
   bellTest: () => alarm(),
   pMetric: d => { pMetric = d.k; smooth(render); },
@@ -1535,6 +1549,12 @@ document.addEventListener('focusout', () => setTimeout(() => { // al cerrar el t
   fitViewport();
   if (!document.activeElement?.matches('input, textarea, select')) scrollTo(0, 0); // la ventana nunca debe quedar desplazada
 }, 80));
+// Puntos de los recuadros deslizables: marcan la vista visible.
+document.addEventListener('scroll', e => {
+  const sl = e.target; if (!sl.classList?.contains('mslides')) return;
+  const k = Math.round(sl.scrollLeft / sl.clientWidth);
+  sl.nextElementSibling?.querySelectorAll('i').forEach((d, j) => d.classList.toggle('on', j === k));
+}, true);
 render();
 sync(); // al abrir: trae lo de otros dispositivos y sube lo de este
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') sync(); });
