@@ -90,9 +90,13 @@ button,input,select{font:inherit;color:inherit}
 .chip{background:var(--card);border:1px solid var(--line);border-radius:999px;padding:6px 12px;white-space:nowrap;cursor:pointer;font-size:14px}
 .chip.on{background:var(--acc);color:#111;border-color:var(--acc)}
 .li{display:flex;justify-content:space-between;width:100%;background:none;border:0;border-bottom:1px solid var(--line);padding:14px 2px;text-align:left;cursor:pointer}
-nav{view-transition-name:barra;flex:none;z-index:6;display:flex;background:var(--card);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom)}
-nav button{flex:1;background:none;border:0;color:var(--mut);padding:10px 0 12px;font-size:12px;cursor:pointer}
+nav{view-transition-name:barra;flex:none;z-index:6;display:flex;position:relative;background:var(--card);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom)}
+nav button{position:relative;z-index:1;flex:1;background:none;border:0;transition:color .3s;color:var(--mut);padding:10px 0 12px;font-size:12px;cursor:pointer}
 nav button b{display:block;font-size:20px}nav button.on{color:var(--acc)}
+/* resaltado que se desliza bajo la pestaña activa */
+#navpill{position:absolute;top:6px;left:8px;width:calc((100% - 16px) / 3);height:54px;border-radius:999px;background:rgba(255,122,26,.13);transition:transform .42s cubic-bezier(.3,1.25,.4,1),opacity .25s;pointer-events:none}
+::view-transition-old(barra){animation:none;opacity:0}::view-transition-new(barra){animation:none}
+@media (prefers-reduced-motion:reduce){#navpill{transition:none}}
 #rest{view-transition-name:descanso;position:fixed;left:8px;right:8px;bottom:calc(70px + env(safe-area-inset-bottom));z-index:7;max-width:624px;margin:0 auto;background:rgba(38,41,47,.92);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border:1px solid var(--line);border-radius:20px;padding:10px 12px;display:flex;align-items:center;gap:10px;box-shadow:0 10px 30px rgba(0,0,0,.45);transform:translateY(160%);opacity:0;visibility:hidden;pointer-events:none;transition:transform .35s cubic-bezier(.2,.9,.25,1),opacity .25s,visibility 0s .35s}
 #rest.show{transform:none;opacity:1;visibility:visible;pointer-events:auto;transition-delay:0s}
 .ring{width:48px;height:48px;transform:rotate(-90deg);flex:none}.ring circle{fill:none;stroke-width:4.5}
@@ -180,6 +184,7 @@ button:active:not(:disabled),.tap:active{transform:scale(.97)}
   <div class="rinfo"><small>Descanso</small><span id="restclock"></span></div>
   <button class="btn ghost sm" data-a="restAdj" data-d="-15">−15</button><button class="btn ghost sm" data-a="restAdj" data-d="15">+15</button><button class="btn sm" data-a="restSkip">Saltar</button></div>
 <nav>
+  <span id="navpill" aria-hidden="true"></span>
   <button data-tab="inicio"><b>🏠</b>Inicio</button>
   <button data-tab="entreno"><b>🏋</b>Entrenamiento</button>
   <button data-tab="perfil"><b>👤</b>Perfil</button>
@@ -195,7 +200,7 @@ button:active:not(:disabled),.tap:active{transform:scale(.97)}
   <button class="btn wide" data-a="wheelDone">Listo</button></div></div>
 <script src="ejercicios.js"></script>
 <script>
-const VERSION = 25; // súbelo junto con C en sw.js
+const VERSION = 26; // súbelo junto con C en sw.js
 const MUSCLES =['Pecho','Espalda','Hombros','Brazos','Piernas','Core'];
 const RESTS = Array.from({ length: 41 }, (_, i) => i * 15); // 0 a 10 min, de 15 en 15 s
 const RING = 119.38; // perímetro del anillo de descanso (2π·19)
@@ -309,7 +314,9 @@ function render() {
   $('#title').textContent = title;
   $('#finishBtn').hidden = !(S.active && V.p === 'entreno');
   $('#view').innerHTML = html;
-  document.querySelectorAll('nav button').forEach(b => b.classList.toggle('on', b.dataset.tab === V.tab));
+  document.querySelectorAll('nav button').forEach(b => { b.classList.toggle('on', b.dataset.tab === V.tab); b.setAttribute('aria-current', b.dataset.tab === V.tab ? 'page' : 'false'); });
+  const ti = ['inicio', 'entreno', 'perfil'].indexOf(V.tab), pill = $('#navpill');
+  pill.style.opacity = ti < 0 ? 0 : 1; if (ti >= 0) pill.style.transform = `translateX(${ti * 100}%)`; // directo: cambiar una variable CSS no anima; en Ajustes no se marca ninguna
   renderSheet(); tick();
   try { sessionStorage.setItem(VIEW_KEY, JSON.stringify(V)); } catch {}
   if ($('#gbtn')) mountGoogle();
