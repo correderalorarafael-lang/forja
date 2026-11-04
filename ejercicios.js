@@ -14,7 +14,10 @@ const EN = ['Bench Press (Barbell)', 'Bench Press (Dumbbell)', 'Incline Bench Pr
   'Lying Leg Curl (Machine)', 'Seated Leg Curl (Machine)', 'Romanian Deadlift (Barbell)', 'Hip Thrust (Barbell)',
   'Standing Calf Raise (Machine)', 'Seated Calf Raise (Machine)', 'Hip Abduction (Machine)', 'Hip Adduction (Machine)', 'Plank',
   'Crunch', 'Cable Crunch', 'Hanging Leg Raise', 'Ab Wheel', 'Russian Twist', 'Calf Press on Leg Press (Machine)',
-  'Single Leg Extension (Machine)', 'Single Leg Press (Machine)', 'Single Leg Romanian Deadlift (Dumbbell)'];
+  'Single Leg Extension (Machine)', 'Single Leg Press (Machine)', 'Single Leg Romanian Deadlift (Dumbbell)',
+  'Pec Deck (Machine)', 'Rear Delt Reverse Fly (Machine)', 'Single Arm Cable Row', 'Bulgarian Split Squat (Smith Machine)',
+  'Step Up (Dumbbell)', 'Lateral Raise (Cable)', 'Single Arm Lateral Raise (Dumbbell)', 'Single Leg Hip Thrust', 'Bayesian Curl (Cable)',
+  'Incline Curl (Dumbbell)', 'Katana Triceps Extension (Cable)', 'Single Arm Triceps Extension (Cable)', 'Skullcrusher (Dumbbell)'];
 const LIB = [
   E('Press de banca (barra)', 'Pecho', ['Pecho'], ['Hombros (parte delantera)', 'Tríceps'], [
     'Túmbate en el banco con los ojos justo debajo de la barra y los pies bien apoyados en el suelo.',
@@ -88,7 +91,7 @@ const LIB = [
     'Tira de la barra hacia el ombligo llevando los codos hacia atrás.',
     'Bájala despacio hasta estirar los brazos.'],
     'La espalda no se redondea nunca; si pasa, baja el peso.'),
-  E('Remo con mancuerna', 'Espalda', ['Espalda (dorsales)', 'Espalda (parte media)'], ['Bíceps', 'Hombros (parte trasera)'], [
+  E('Remo unilateral con mancuerna', 'Espalda', ['Espalda (dorsales)', 'Espalda (parte media)'], ['Bíceps', 'Hombros (parte trasera)'], [
     'Apoya una rodilla y una mano en un banco y deja la otra pierna en el suelo.',
     'Con la espalda recta, coge la mancuerna con la mano libre y el brazo estirado.',
     'Sube la mancuerna hacia la cadera llevando el codo hacia atrás y pegado al cuerpo.',
@@ -142,13 +145,13 @@ const LIB = [
     'Empuja hacia arriba hasta casi estirar los brazos.',
     'Baja despacio hasta la altura de los hombros.'],
     'Buena opción para trabajar pesado sin preocuparte del equilibrio.'),
-  E('Elevaciones laterales', 'Hombros', ['Hombros (lateral)'], ['Trapecio'], [
+  E('Elevaciones laterales (mancuernas)', 'Hombros', ['Hombros (lateral)'], ['Trapecio'], [
     'De pie, con una mancuerna en cada mano a los lados del cuerpo y los codos un poco doblados.',
     'Sube los brazos hacia los lados hasta la altura de los hombros.',
     'Imagina que viertes agua de una jarra: el meñique un pelín más alto que el pulgar.',
     'Baja despacio sin dejarlas caer.'],
     'Usa poco peso y sin impulso; es un músculo pequeño y se engaña fácil con el balanceo.'),
-  E('Elevaciones laterales en polea', 'Hombros', ['Hombros (lateral)'], ['Trapecio'], [
+  E('Elevación lateral a un brazo en polea', 'Hombros', ['Hombros (lateral)'], ['Trapecio'], [
     'Ponte de lado a una polea baja y agarra el asa con la mano más alejada.',
     'Con el codo un poco doblado, sube el brazo hacia el lado hasta la altura del hombro.',
     'Aguanta un instante arriba.',
@@ -214,7 +217,7 @@ const LIB = [
     'Empuja hacia abajo hasta estirar los brazos por completo.',
     'Sube despacio hasta que los antebrazos queden paralelos al suelo.'],
     'Solo se mueven los antebrazos; los codos se quedan quietos pegados al cuerpo.'),
-  E('Press francés', 'Brazos', ['Tríceps'], [], [
+  E('Press francés (barra Z)', 'Brazos', ['Tríceps'], [], [
     'Túmbate en un banco con la barra sujeta arriba y los brazos estirados.',
     'Sin mover los codos, dóblalos para bajar la barra hacia la frente.',
     'Para justo antes de tocar la frente.',
@@ -382,4 +385,82 @@ const LIB = [
     'Baja hasta notar un buen estiramiento detrás del muslo de la pierna de apoyo, con la cadera mirando al suelo.',
     'Vuelve a subir apretando el glúteo. Termina la serie y cambia de pierna.'],
     'Si pierdes el equilibrio, apoya una mano en una pared o en un banco mientras aprendes.'),
+  E('Aperturas en máquina (contractora)', 'Pecho', ['Pecho'], ['Hombros (parte delantera)'], [
+    'Ajusta el asiento para que las asas queden a la altura del pecho y siéntate con la espalda pegada al respaldo.',
+    'Agarra las asas (o apoya los antebrazos en los cojines) con los codos un poco doblados.',
+    'Junta los brazos delante del pecho como si dieras un abrazo, y aprieta el pecho un segundo.',
+    'Abre despacio hasta notar el pecho estirado, sin llevar los codos más atrás del cuerpo.'],
+    'Es muy fácil de controlar: ideal para terminar el entreno de pecho buscando buena contracción.'),
+  E('Deltoides posterior en máquina', 'Hombros', ['Hombros (parte trasera)'], ['Espalda (parte media)', 'Trapecio'], [
+    'Siéntate mirando al respaldo de la máquina de aperturas, con el pecho apoyado.',
+    'Ajusta el asiento para que las asas queden a la altura de los hombros y agárralas con los brazos estirados delante.',
+    'Abre los brazos hacia atrás, como dibujando un arco, hasta que queden en línea con el cuerpo.',
+    'Vuelve despacio.'],
+    'Peso moderado y sin tirones; piensa en llevar las manos lejos, no en juntar los omóplatos.'),
+  E('Remo unilateral en polea', 'Espalda', ['Espalda (dorsales)', 'Espalda (parte media)'], ['Bíceps', 'Hombros (parte trasera)'], [
+    'Siéntate en el remo de polea baja con un asa de una mano y los pies apoyados.',
+    'Con la espalda recta, deja que el brazo se estire hacia delante notando la espalda estirada.',
+    'Tira del asa hacia la cadera llevando el codo hacia atrás y pegado al cuerpo.',
+    'Vuelve despacio. Termina la serie y cambia de brazo.'],
+    'Un brazo cada vez te ayuda a igualar los dos lados y a notar mejor la espalda.'),
+  E('Sentadilla búlgara en multipower', 'Piernas', ['Cuádriceps', 'Glúteos'], ['Isquiotibiales (parte trasera del muslo)'], [
+    'Coloca la barra del multipower sobre la parte alta de la espalda y apoya el empeine de un pie en un banco detrás de ti.',
+    'Adelanta la otra pierna lo suficiente para que, al bajar, la rodilla no pase mucho la punta del pie.',
+    'Baja en línea recta hasta que el muslo de delante quede casi paralelo al suelo.',
+    'Sube empujando con el pie de delante. Luego cambia de pierna.'],
+    'El multipower te da estabilidad, así que puedes centrarte en la pierna y usar más peso que con mancuernas.'),
+  E('Step up (subida a cajón)', 'Piernas', ['Cuádriceps', 'Glúteos'], ['Isquiotibiales (parte trasera del muslo)', 'Gemelos'], [
+    'Ponte frente a un banco o cajón estable, con una mancuerna en cada mano.',
+    'Apoya un pie entero encima del banco.',
+    'Sube empujando con esa pierna hasta quedar de pie sobre el banco, sin impulsarte con la de abajo.',
+    'Baja despacio con la misma pierna. Haz todas las repeticiones y cambia.'],
+    'Cuanto más alto el cajón, más trabaja el glúteo; empieza con una altura que controles.'),
+  E('Elevaciones laterales en polea (dos brazos)', 'Hombros', ['Hombros (lateral)'], ['Trapecio'], [
+    'Ponte entre dos poleas bajas y agarra con cada mano el asa del lado contrario, cruzando los cables delante de ti.',
+    'Con los codos un poco doblados, sube los brazos hacia los lados hasta la altura de los hombros.',
+    'Aguanta un instante arriba.',
+    'Baja despacio hasta que las manos se crucen otra vez.'],
+    'Si no tienes dos poleas libres, hazlo a un brazo: es el mismo trabajo.'),
+  E('Elevación lateral a un brazo (mancuerna)', 'Hombros', ['Hombros (lateral)'], ['Trapecio'], [
+    'De pie, sujétate con una mano a un banco o a la máquina y coge una mancuerna con la otra.',
+    'Inclínate un poco hacia el lado del apoyo, con el codo de trabajo algo doblado.',
+    'Sube el brazo hacia el lado hasta la altura del hombro.',
+    'Baja despacio. Termina la serie y cambia de brazo.'],
+    'Al sujetarte con la otra mano no puedes hacer trampa con el cuerpo: todo el trabajo va al hombro.'),
+  E('Hip thrust unilateral', 'Piernas', ['Glúteos'], ['Isquiotibiales (parte trasera del muslo)'], [
+    'Apoya la parte alta de la espalda en un banco y deja un pie en el suelo con la rodilla doblada.',
+    'Levanta la otra pierna y mantenla recogida o estirada en el aire.',
+    'Sube la cadera empujando con el talón hasta que el cuerpo quede recto de los hombros a la rodilla.',
+    'Aprieta el glúteo arriba y baja despacio. Luego cambia de pierna.'],
+    'Puedes añadir peso con una mancuerna sobre la cadera. (La foto muestra el puente a una pierna en el suelo.)'),
+  E('Curl bayesian en polea', 'Brazos', ['Bíceps'], ['Antebrazos'], [
+    'Pon la polea baja, agarra el asa con una mano y da un par de pasos alejándote, de espaldas a la máquina.',
+    'Deja que el brazo quede estirado un poco por detrás del cuerpo, notando el bíceps estirado.',
+    'Dobla el codo subiendo la mano hacia el hombro, sin mover el codo hacia delante.',
+    'Baja despacio hasta estirar de nuevo. Termina y cambia de brazo.'],
+    'Trabaja el bíceps muy estirado, que es donde más crece. (La foto muestra el curl a un brazo de cara a la polea.)'),
+  E('Curl en banco inclinado (mancuernas)', 'Brazos', ['Bíceps'], ['Antebrazos'], [
+    'Inclina el respaldo unos 45-60° y túmbate con una mancuerna en cada mano y los brazos colgando.',
+    'Mantén los hombros pegados al respaldo y las palmas mirando hacia delante.',
+    'Sube las mancuernas doblando los codos, sin adelantar los brazos.',
+    'Baja despacio hasta estirar los brazos del todo.'],
+    'Al empezar con el brazo por detrás del cuerpo, el bíceps se estira más; usa menos peso que de pie.'),
+  E('Extensión katana en polea media', 'Brazos', ['Tríceps'], [], [
+    'Pon la polea a media altura, agarra el asa con una mano y date la vuelta, de espaldas a la máquina.',
+    'Lleva la mano por detrás de la cabeza, hacia el hombro contrario, con el codo apuntando hacia delante y arriba.',
+    'Estira el brazo en diagonal hacia arriba y hacia fuera, como sacando una espada.',
+    'Vuelve despacio notando el tríceps estirado. Termina y cambia de brazo.'],
+    'Trabaja mucho la parte larga del tríceps. (La foto muestra la extensión por encima de la cabeza con cuerda.)'),
+  E('Extensión de tríceps a un brazo en polea', 'Brazos', ['Tríceps'], [], [
+    'Pon un asa en la polea alta (o media) y agárrala con una mano.',
+    'Pega el codo al costado con el brazo doblado.',
+    'Empuja hacia abajo hasta estirar el brazo del todo y aprieta el tríceps.',
+    'Sube despacio sin despegar el codo. Termina la serie y cambia de brazo.'],
+    'Puedes agarrar con la palma hacia arriba o hacia abajo; cambia de vez en cuando para variar.'),
+  E('Press francés con mancuernas', 'Brazos', ['Tríceps'], [], [
+    'Túmbate en un banco con una mancuerna en cada mano y los brazos estirados hacia el techo, palmas mirándose.',
+    'Sin mover los codos, dóblalos para bajar las mancuernas a los lados de la cabeza.',
+    'Baja hasta notar el tríceps estirado.',
+    'Estira los brazos para volver arriba.'],
+    'Con mancuernas cada brazo trabaja por su cuenta y las muñecas van más cómodas que con barra.'),
 ].map((e, i) => ({ id: 'b' + i, img: true, en: EN[i], ...e }));
