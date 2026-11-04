@@ -230,7 +230,7 @@ button:active:not(:disabled),.tap:active{transform:scale(.97)}
   <button class="btn wide" data-a="wheelDone">Listo</button></div></div>
 <script src="ejercicios.js"></script>
 <script>
-const VERSION = 31; // súbelo junto con C en sw.js
+const VERSION = 32; // súbelo junto con C en sw.js
 const MUSCLES =['Pecho','Espalda','Hombros','Brazos','Piernas','Core'];
 const RESTS = Array.from({ length: 41 }, (_, i) => i * 15); // 0 a 10 min, de 15 en 15 s
 const RING = 119.38; // perímetro del anillo de descanso (2π·19)
@@ -293,7 +293,10 @@ const allEx = () => [...LIB, ...S.custom];
 const ex = id => allEx().find(e => e.id === id) || { id, name: '(ejercicio borrado)', muscle: '' };
 const e1rm = s => s.reps === 1 ? s.kg : s.kg * (1 + s.reps / 30); // Epley
 const vol = w => w.items.reduce((t, it) => t + it.sets.reduce((u, s) => u + (s.done === false ? 0 : (+s.kg || 0) * (+s.reps || 0)), 0), 0);
-const nsets = w => w.items.reduce((t, it) => t + it.sets.filter(s => s.done !== false).length, 0);
+// Unilaterales: cada lado se apunta como una fila, así que 2 filas = 1 serie real (para series y reparto muscular).
+const UNILATERAL = /unilateral|a una pierna|a un brazo|búlgara|bulgara|step up|bayesian|katana/i;
+const sideFactor = exId => UNILATERAL.test(ex(exId).name) ? .5 : 1;
+const nsets = w => w.items.reduce((t, it) => t + it.sets.filter(s => s.done !== false).length * sideFactor(it.exId), 0);
 const prevSets = id => { for (const w of S.workouts) { const it = w.items.find(x => x.exId === id); if (it) return it.sets; } return []; };
 const bestE1rm = id => Math.max(0, ...S.workouts.flatMap(w => w.items.filter(it => it.exId === id).flatMap(it => work(it.sets).map(e1rm))));
 // Etiqueta de la serie: C/F/D o su número (sin contar las de calentamiento).
@@ -382,7 +385,7 @@ function pEntreno() {
   return ['Entreno en curso', `
     <div class="card">
       <input class="title-in" data-w="name" value="${esc(a.name)}" aria-label="Nombre del entreno">
-      <div class="stats"><div><small>Duración</small><b id="elapsed"></b></div><div><small>Volumen</small><b id="vol">${fmtKg(vol(a))}</b></div><div><small>Series</small><b id="nsets">${nsets(a)}</b></div></div>
+      <div class="stats"><div><small>Duración</small><b id="elapsed"></b></div><div><small>Volumen</small><b id="vol">${fmtKg(vol(a))}</b></div><div><small>Series</small><b id="nsets">${fmt(nsets(a))}</b></div></div>
       <div class="row between" style="margin-top:10px"><small>Toca el nº de serie para cambiar su tipo. Desliza una serie a la izquierda para borrarla.</small>
         <button class="btn ghost sm" data-a="openDiscos">🧮 Discos</button></div>
     </div>
@@ -424,8 +427,9 @@ function muscleShare(items) {
   const t = {};
   for (const { exId, n } of items) {
     const e = ex(exId);
-    (e.main || [e.muscle]).filter(Boolean).forEach(m => t[m] = (t[m] || 0) + n);
-    (e.sec || []).forEach(m => t[m] = (t[m] || 0) + n / 2);
+    const f = n * sideFactor(exId);
+    (e.main || [e.muscle]).filter(Boolean).forEach(m => t[m] = (t[m] || 0) + f);
+    (e.sec || []).forEach(m => t[m] = (t[m] || 0) + f / 2);
   }
   const total = Object.values(t).reduce((a, b) => a + b, 0);
   return Object.entries(t).sort((a, b) => b[1] - a[1]).map(([m, v]) => [m, v / total * 100, v]); // [músculo, %, series]
@@ -658,7 +662,7 @@ function pResumen() {
     <div class="card hero"><div style="font-size:40px">💪</div><h2 style="margin:4px 0">¡Entreno completado!</h2>
       <b>${esc(w.name)}</b><br><small>${new Date(w.start).toLocaleString('es', { dateStyle: 'full', timeStyle: 'short' })}</small></div>
     <div class="card stats"><div><small>Duración</small><b>${fdur(dur)}</b></div><div><small>Volumen</small><b>${fmtKg(vol(w))}</b></div>
-      <div><small>Series</small><b>${nsets(w)}</b></div><div><small>Récords</small><b>${prs.length ? '🏅 ' + prs.length : '—'}</b></div></div>
+      <div><small>Series</small><b>${fmt(nsets(w))}</b></div><div><small>Récords</small><b>${prs.length ? '🏅 ' + prs.length : '—'}</b></div></div>
     ${(c => `<div class="card hero"><small>Hoy has levantado</small><div class="bigkg">${fmtKg(vol(w))}</div>
       <div class="cmpemoji" aria-hidden="true">${c.emoji.repeat(Math.min(3, c.n))}</div><b>${c.text}</b>
       <button class="btn ghost wide" data-a="shareResumen" data-id="${w.id}" data-k="cmp">📤 Compartir esta imagen</button></div>`)(compare(vol(w)))}
@@ -701,7 +705,7 @@ async function shareResumen(id, kind = 'resumen') {
   } else {
     g.fillStyle = '#E8ECF3'; g.font = `800 64px ${F}`; g.fillText(fit(w.name, 920), 80, 260);
     g.fillStyle = '#8A94A8'; g.font = `400 34px ${F}`; g.fillText(new Date(w.start).toLocaleDateString('es', { weekday: 'long', day: 'numeric', month: 'long' }), 80, 315);
-    [['Duración', fdur(w.end - w.start)], ['Volumen', fmtKg(vol(w))], ['Series', String(nsets(w))], ['Récords', prs.length ? '🏅 ' + prs.length : '—']].forEach(([l, v], i) => {
+    [['Duración', fdur(w.end - w.start)], ['Volumen', fmtKg(vol(w))], ['Series', fmt(nsets(w))], ['Récords', prs.length ? '🏅 ' + prs.length : '—']].forEach(([l, v], i) => {
       const x = 80 + i * 235; g.fillStyle = '#1A1F29'; g.fillRect(x, 370, 215, 150);
       g.fillStyle = '#8A94A8'; g.font = `400 28px ${F}`; g.fillText(l, x + 22, 418); g.fillStyle = '#E8ECF3'; g.font = `800 40px ${F}`; g.fillText(fit(v, 180), x + 22, 480);
     });
@@ -733,7 +737,7 @@ function pWorkout() {
   if (!w) { V = { p: 'inicio', tab: 'inicio' }; return pInicio(); }
   return [w.name, `
     <div class="card"><small>${new Date(w.start).toLocaleString('es', { dateStyle: 'full', timeStyle: 'short' })}</small>
-      <div class="stats" style="margin-top:8px"><div><small>Duración</small><b>${fdur(w.end - w.start)}</b></div><div><small>Volumen</small><b>${fmtKg(vol(w))}</b></div><div><small>Series</small><b>${nsets(w)}</b></div></div></div>
+      <div class="stats" style="margin-top:8px"><div><small>Duración</small><b>${fdur(w.end - w.start)}</b></div><div><small>Volumen</small><b>${fmtKg(vol(w))}</b></div><div><small>Series</small><b>${fmt(nsets(w))}</b></div></div></div>
     ${w.items.map((it, i) => `<div class="card ${it.ss ? 'ss' : ''}">${it.ss ? `<small class="sslabel">🔗 Superserie ${ssLetter(w.items, i)}</small>` : ''}
       <b class="exname" data-a="openEx" data-id="${it.exId}" style="display:flex;align-items:center;gap:10px">${thumb(ex(it.exId))}${esc(ex(it.exId).name)}</b>
       <table>${it.sets.map((s, j) => `<tr><td class="t-${s.t || ''}">${setLabel(it.sets, j)}</td><td>${fmt(s.kg)} kg × ${s.reps}${s.rpe ? ` <small>RPE ${fmt(s.rpe)}</small>` : ''}</td><td>${s.t === 'w' ? 'calentamiento' : `1RM ~${fmt(e1rm(s))}`}</td></tr>`).join('')}</table></div>`).join('')}
@@ -1084,7 +1088,7 @@ function restUpdate() {
   $('#rest').classList.toggle('show', !!a?.restEnd);
 }
 (function frame() { restUpdate(); requestAnimationFrame(frame); })();
-function updStats() { const a = S.active; if ($('#vol')) { $('#vol').textContent = fmtKg(vol(a)); $('#nsets').textContent = nsets(a); } }
+function updStats() { const a = S.active; if ($('#vol')) { $('#vol').textContent = fmtKg(vol(a)); $('#nsets').textContent = fmt(nsets(a)); } }
 
 // --- rueda de descanso: de 15 en 15 s; la lista se repite varias veces y se recoloca
 // en la copia del medio al parar, así nunca se llega al final ---
