@@ -164,7 +164,7 @@ table{width:100%;border-collapse:collapse;font-size:15px}td{padding:4px 0}td:las
   <button class="btn wide" data-a="wheelDone">Listo</button></div></div>
 <script src="ejercicios.js"></script>
 <script>
-const VERSION = 19; // súbelo junto con C en sw.js
+const VERSION = 20; // súbelo junto con C en sw.js
 const MUSCLES =['Pecho','Espalda','Hombros','Brazos','Piernas','Core'];
 const RESTS = Array.from({ length: 41 }, (_, i) => i * 15); // 0 a 10 min, de 15 en 15 s
 const RING = 119.38; // perímetro del anillo de descanso (2π·19)
@@ -185,7 +185,7 @@ const fdur = ms => { const m = Math.round(ms / 60000); return m >= 60 ? `${Math.
 
 // --- datos (solo en este dispositivo) ---
 const KEY = 'forja-v1';
-const defaults = () => ({ custom: [], routines: [], workouts: [], active: null, rest: 90, alias: {}, notes: {}, body: [], folders: [], profile: { name: '', photo: '' } });
+const defaults = () => ({ custom: [], routines: [], workouts: [], active: null, rest: 90, alias: {}, notes: {}, body: [], folders: [], profile: { name: '', photo: '' }, deleted: {} });
 // alias: nombre importado → id de ejercicio · notes: nota fija por ejercicio · body: [{ t, peso, grasa, cintura… }]
 function load() {
   const raw = localStorage.getItem(KEY);
@@ -194,7 +194,9 @@ function load() {
   catch { localStorage.setItem(KEY + '-corrupto-' + Date.now(), raw); return defaults(); } // nunca pisar datos ilegibles
 }
 let S = load();
-const save = () => localStorage.setItem(KEY, JSON.stringify(S));
+const save = () => { localStorage.setItem(KEY, JSON.stringify(S)); if (acct) syncSoon(); };
+const gone = key => S.deleted[key] = Date.now(); // marca un borrado para la sincronización
+let acct = (() => { try { return JSON.parse(localStorage.getItem('forja-cuenta')); } catch { return null; } })(); // { token, email, name, synced }
 navigator.storage?.persist?.();
 
 const allEx = () => [...LIB, ...S.custom];
@@ -243,6 +245,7 @@ function render() {
   document.querySelectorAll('nav button').forEach(b => b.classList.toggle('on', b.dataset.tab === V.tab));
   renderSheet(); tick();
   try { sessionStorage.setItem(VIEW_KEY, JSON.stringify(V)); } catch {}
+  if ($('#gbtn')) mountGoogle();
 }
 function toast(msg) { const t = $('#toast'); t.textContent = msg; t.classList.add('on'); clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.remove('on'), 3000); }
 
@@ -471,6 +474,8 @@ function pPerfil() {
       <div style="flex:1;min-width:0"><div class="row between"><b style="font-size:20px">${esc(p.name || 'Tu nombre')}</b>
         <button class="icon" data-a="nameEdit" aria-label="Cambiar nombre">✎</button></div>
         <div class="stats" style="margin-top:6px"><div><small>Entrenos</small><b>${S.workouts.length}</b></div><div><small>Récords</small><b>${total}</b></div></div></div></div>
+    ${acct ? `<p class="muted">☁️ Guardado en tu cuenta de Google (${esc(acct.email)})</p>` : `<div class="card"><h3>☁️ Guarda tu cuenta</h3>
+      <p class="muted">Inicia sesión para guardar tus entrenos en la nube y recuperarlos si cambias de móvil.</p><div id="gbtn"></div></div>`}
     ${weeklyChart(pMetric, true)}
     <h2>Información</h2>
     <div class="tiles"><button class="tile" data-a="goSub" data-p="stats">📈 Estadísticas</button><button class="tile" data-a="goSub" data-p="ejercicios">🏋 Ejercicios</button>
@@ -583,6 +588,10 @@ function pAjustes() {
         : Notification.permission === 'granted' ? '✅ Notificaciones activadas.' : Notification.permission === 'denied' ? '🚫 Las notificaciones están bloqueadas: actívalas en Ajustes del móvil → Notificaciones → Forja.' : ''}</p>
       ${window.Notification && Notification.permission === 'default' ? '<button class="btn wide" data-a="notifAsk">Activar notificaciones</button>' : ''}
       <button class="btn ghost wide" data-a="bellTest">🔔 Probar campanas</button></div>
+    <div class="card"><b>Cuenta</b>${acct ? `<p class="muted">Conectado como <b>${esc(acct.email)}</b>.
+        ${acct.synced ? `Última sincronización: ${new Date(acct.synced).toLocaleString('es', { dateStyle: 'short', timeStyle: 'short' })}.` : ''}</p>
+      <button class="btn ghost wide" data-a="syncNow">☁️ Sincronizar ahora</button><button class="btn danger wide" data-a="logout">Cerrar sesión</button>`
+      : `<p class="muted">Inicia sesión con Google para guardar tus datos en la nube.</p><div id="gbtn"></div>`}</div>
     <p class="muted">Forja versión ${VERSION}</p>`];
 }
 // --- calculadora de discos ---
@@ -742,6 +751,68 @@ document.addEventListener('touchend', audioOn, { once: true });
 document.addEventListener('click', audioOn, { once: true });
 // --- aviso con el móvil bloqueado: el servidor forja-push (Cloudflare) envía el push a la hora exacta ---
 const PUSH_URL = 'https://forja-push.forja-push.workers.dev'; // servidor forja-push (Cloudflare)
+
+// --- cuenta de Google y copia de los datos en la nube (el mismo servidor, base de datos D1) ---
+const GOOGLE_CLIENT_ID = '535753998513-hsm7h1efc7jouu7t66kp1vfknf5bvotj.apps.googleusercontent.com';
+function saveAcct() { try { acct ? localStorage.setItem('forja-cuenta', JSON.stringify(acct)) : localStorage.removeItem('forja-cuenta'); } catch {} }
+// Une los datos del móvil (a) con los de la nube (b) sin perder nada: por id, gana el cambio más nuevo (u)
+// y lo borrado en cualquiera de los dos se queda borrado. El entreno en curso nunca se sincroniza.
+function mergeData(a, b) {
+  const deleted = { ...b.deleted, ...a.deleted };
+  const join = (la = [], lb = [], key, pre) => {
+    const m = new Map(lb.map(o => [key(o), o]));
+    for (const o of la) { const r = m.get(key(o)); m.set(key(o), r && (r.u || 0) > (o.u || 0) ? r : o); }
+    return [...m.values()].filter(o => !deleted[pre + key(o)]);
+  };
+  const id = o => o.id;
+  return { ...b, ...a, active: a.active, deleted,
+    workouts: join(a.workouts, b.workouts, id, 'w:').sort((x, y) => y.start - x.start),
+    routines: join(a.routines, b.routines, id, 'r:'), folders: join(a.folders, b.folders, id, 'f:'), custom: join(a.custom, b.custom, id, 'c:'),
+    body: join(a.body, b.body, o => o.t, 'b:').sort((x, y) => x.t - y.t),
+    notes: { ...b.notes, ...a.notes }, alias: { ...b.alias, ...a.alias },
+    profile: a.profile?.name || a.profile?.photo ? a.profile : b.profile || a.profile };
+}
+let syncing = false, syncT = null;
+const syncSoon = () => { clearTimeout(syncT); syncT = setTimeout(sync, 3000); };
+async function sync() {
+  if (!acct || syncing) return;
+  syncing = true;
+  try {
+    const auth = { Authorization: 'Bearer ' + acct.token };
+    const r = await fetch(PUSH_URL + '/datos', { headers: auth });
+    if (r.status === 401) { acct = null; saveAcct(); toast('Tu sesión ha caducado: vuelve a iniciar sesión'); render(); return; }
+    if (!r.ok) return;
+    const { data } = await r.json();
+    if (data) {
+      const before = JSON.stringify(S);
+      S = mergeData(S, data);
+      if (JSON.stringify(S) !== before) { localStorage.setItem(KEY, JSON.stringify(S)); if (!document.activeElement?.matches('input, textarea')) render(); }
+    }
+    const put = await fetch(PUSH_URL + '/datos', { method: 'PUT', headers: { ...auth, 'Content-Type': 'application/json' }, body: JSON.stringify({ ...S, active: null }) });
+    if (put.ok) { acct.synced = Date.now(); saveAcct(); }
+    else if (put.status === 413) toast('Tus datos son demasiado grandes para guardarlos en la nube');
+  } catch {} finally { syncing = false; } // sin conexión: se reintenta en el próximo cambio
+}
+const loadGsi = () => window.google?.accounts ? Promise.resolve() : new Promise((ok, ko) => {
+  const s = document.createElement('script'); s.src = 'https://accounts.google.com/gsi/client'; s.onload = ok; s.onerror = ko; document.head.append(s);
+});
+let gsiReady = false;
+async function mountGoogle() {
+  try { await loadGsi(); } catch { const el = $('#gbtn'); if (el) el.textContent = 'Sin conexión: no se puede iniciar sesión ahora.'; return; }
+  if (!gsiReady) { google.accounts.id.initialize({ client_id: GOOGLE_CLIENT_ID, callback: onGoogle, cancel_on_tap_outside: true }); gsiReady = true; }
+  const el = $('#gbtn');
+  if (el && !el.childElementCount) google.accounts.id.renderButton(el, { theme: 'filled_black', size: 'large', shape: 'pill', text: 'continue_with', locale: 'es', width: 260 });
+}
+async function onGoogle({ credential }) {
+  try {
+    const r = await fetch(PUSH_URL + '/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ credential }) });
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.error);
+    acct = d; saveAcct();
+    if (!S.profile.name && d.name) { S.profile.name = d.name; localStorage.setItem(KEY, JSON.stringify(S)); }
+    toast('Sesión iniciada: guardando tus datos…'); await sync(); render(); toast('✅ Tus datos están guardados en tu cuenta');
+  } catch (e) { toast('No se pudo iniciar sesión' + (e.message ? ': ' + e.message : '')); }
+}
 const VAPID_PUBLIC = 'BEvuR-UIkZdGorQHM2bYE0CEsRHFREodvOL7dS_Kb0m0AFIqYTw7lewUETtHR12wWigrnYScTfA-JWVdkvKX4gs';
 const deviceId = (() => { try { let d = localStorage.getItem('forja-dispositivo'); if (!d) localStorage.setItem('forja-dispositivo', d = crypto.randomUUID()); return d; } catch { return null; } })();
 let pushed = false; // hay un aviso programado en el servidor
@@ -876,15 +947,17 @@ const MENU = {
   rpe: d => { const s = S.active.items[d.i].sets[d.j]; if (d.v) s.rpe = +d.v; else delete s.rpe; save(); render(); },
   save: () => A.finish(),
   rEdit: d => A.editRoutine(d),
-  rDup: d => { const r = S.routines.find(x => x.id === d.id); S.routines.push({ ...structuredClone(r), id: uid(), name: r.name + ' (copia)' }); save(); render(); toast('Rutina duplicada'); },
+  syncNow: async () => { toast('Sincronizando…'); await sync(); render(); toast(acct ? '✅ Sincronizado' : 'Vuelve a iniciar sesión'); },
+  logout: () => { acct = null; saveAcct(); window.google?.accounts.id.disableAutoSelect(); render(); toast('Sesión cerrada; tus datos siguen en este móvil'); },
+  rDup: d => { const r = S.routines.find(x => x.id === d.id); S.routines.push({ ...structuredClone(r), id: uid(), name: r.name + ' (copia)', u: Date.now() }); save(); render(); toast('Rutina duplicada'); },
   rMove: d => openMenu('Mover a carpeta', S.folders.map(f => mItem('📁', esc(f.name), 'rMoveTo', `data-id="${d.id}" data-f="${f.id}"`)).join('')
     + mItem('📋', 'Sin carpeta', 'rMoveTo', `data-id="${d.id}" data-f=""`) + mItem('➕', 'Nueva carpeta…', 'rMoveNew', `data-id="${d.id}"`)),
-  rMoveTo: d => { const r = S.routines.find(x => x.id === d.id); if (d.f) r.folder = d.f; else delete r.folder; save(); render(); },
+  rMoveTo: d => { const r = S.routines.find(x => x.id === d.id); if (d.f) r.folder = d.f; else delete r.folder; r.u = Date.now(); save(); render(); },
   rMoveNew: d => { const f = newFolder(); if (f) MENU.rMoveTo({ id: d.id, f: f.id }); },
   rDel: d => openMenu(`¿Eliminar «${S.routines.find(x => x.id === d.id).name}»?`, mItem('🗑', 'Eliminar rutina', 'rDelYes', `data-id="${d.id}"`, 'danger') + mItem('↩', 'Cancelar', 'done')),
-  rDelYes: d => { S.routines = S.routines.filter(r => r.id !== d.id); save(); render(); toast('Rutina eliminada'); },
-  fRename: d => { const f = S.folders.find(x => x.id === d.id), n = prompt('Nuevo nombre de la carpeta', f.name)?.trim(); if (n) { f.name = n; save(); } render(); },
-  fDel: d => { S.folders = S.folders.filter(f => f.id !== d.id); S.routines.forEach(r => { if (r.folder === d.id) delete r.folder; }); save(); render(); toast('Carpeta eliminada; sus rutinas siguen en Mis rutinas'); },
+  rDelYes: d => { gone('r:' + d.id); S.routines = S.routines.filter(r => r.id !== d.id); save(); render(); toast('Rutina eliminada'); },
+  fRename: d => { const f = S.folders.find(x => x.id === d.id), n = prompt('Nuevo nombre de la carpeta', f.name)?.trim(); if (n) { f.name = n; f.u = Date.now(); save(); } render(); },
+  fDel: d => { gone('f:' + d.id); S.folders = S.folders.filter(f => f.id !== d.id); S.routines.forEach(r => { if (r.folder === d.id) delete r.folder; }); save(); render(); toast('Carpeta eliminada; sus rutinas siguen en Mis rutinas'); },
   discardAsk: () => openMenu('¿Seguro que quieres descartar el entrenamiento?', `<p class="muted">Se perderán todas las series de este entreno.</p>`
     + mItem('🗑', 'Descartar entrenamiento', 'discardYes', '', 'danger') + mItem('↩', 'Cancelar', 'done')),
   discardYes: () => { S.active = null; save(); render(); toast('Entreno descartado'); scheduleRest(null); },
@@ -937,11 +1010,12 @@ const A = {
     if (!draft.name.trim()) return toast('Ponle un nombre a la rutina');
     if (!draft.items.length) return toast('Añade al menos un ejercicio');
     draft.name = draft.name.trim();
+    draft.u = Date.now();
     if (draft.id) S.routines[S.routines.findIndex(r => r.id === draft.id)] = draft;
     else S.routines.push({ ...draft, id: uid() });
     save(); toast('Rutina guardada'); go('entreno');
   },
-  delRoutine: () => { if (!confirm('¿Eliminar esta rutina?')) return; S.routines = S.routines.filter(r => r.id !== draft.id); save(); go('entreno'); },
+  delRoutine: () => { if (!confirm('¿Eliminar esta rutina?')) return; gone('r:' + draft.id); S.routines = S.routines.filter(r => r.id !== draft.id); save(); go('entreno'); },
   pick: d => { picker = d.mode; F.pick = { q: '', m: '' }; history.pushState(null, ''); renderSheet(); },
   closePick: () => history.back(),
   pickEx: d => {
@@ -998,11 +1072,12 @@ const A = {
     const e = { t: new Date(($('#bDate').value || today()) + 'T12:00').getTime() };
     for (const [k] of BODY) { const v = $('#b_' + k).value.replace(',', '.').trim(); if (v !== '' && !isNaN(v)) e[k] = +v; }
     if (Object.keys(e).length < 2) return toast('Escribe al menos una medida');
+    e.u = Date.now();
     const same = S.body.find(x => x.t === e.t);
     if (same) Object.assign(same, e); else S.body.push(e);
     save(); toast('Registro guardado'); render();
   },
-  bodyDel: d => { if (!confirm('¿Borrar este registro?')) return; S.body = S.body.filter(x => x.t !== +d.t); save(); render(); },
+  bodyDel: d => { if (!confirm('¿Borrar este registro?')) return; gone('b:' + d.t); S.body = S.body.filter(x => x.t !== +d.t); save(); render(); },
   hevyCsvPick: () => $('#hevyCsv').click(),
   histSave: () => {
     const map = {};
@@ -1025,7 +1100,7 @@ const A = {
   nameEdit: () => { const n = prompt('Tu nombre', S.profile.name); if (n != null) { S.profile.name = n.trim(); save(); render(); } },
   calMove: d => { calM = new Date(calM.getFullYear(), calM.getMonth() + +d.d, 1); render(); },
   newFolder: () => { if (newFolder()) render(); },
-  folderToggle: d => { const f = S.folders.find(x => x.id === d.id); f.closed = !f.closed; save(); render(); },
+  folderToggle: d => { const f = S.folders.find(x => x.id === d.id); f.closed = !f.closed; f.u = Date.now(); save(); render(); },
   folderMenu: d => { const f = S.folders.find(x => x.id === d.id), a = `data-id="${d.id}"`;
     openMenu(f.name, mItem('✎', 'Renombrar carpeta', 'fRename', a) + mItem('🗑', 'Eliminar carpeta', 'fDel', a, 'danger')); },
   routineMenu: d => { const r = S.routines.find(x => x.id === d.id), a = `data-id="${d.id}"`;
@@ -1047,14 +1122,14 @@ const A = {
   },
   openW: d => go('workout', { id: d.id }),
   openEx: d => go('ejercicio', { id: d.id }),
-  delW: d => { if (!confirm('¿Eliminar este entreno del historial?')) return; S.workouts = S.workouts.filter(w => w.id !== d.id); save(); go('inicio'); },
+  delW: d => { if (!confirm('¿Eliminar este entreno del historial?')) return; gone('w:' + d.id); S.workouts = S.workouts.filter(w => w.id !== d.id); save(); go('inicio'); },
   addCustom: () => {
     const name = $('#cName').value.trim();
     if (!name) return toast('Escribe un nombre');
     if (allEx().some(e => norm(e.name) === norm(name))) return toast('Ese ejercicio ya existe');
     S.custom.push({ id: 'c' + uid(), name, muscle: $('#cMuscle').value }); save(); toast('Ejercicio creado'); render();
   },
-  delCustom: d => { if (!confirm('¿Eliminar este ejercicio?')) return; S.custom = S.custom.filter(c => c.id !== d.id); S.routines.forEach(r => r.items = r.items.filter(it => it.exId !== d.id)); save(); go('ejercicios', { tab: 'perfil' }); },
+  delCustom: d => { if (!confirm('¿Eliminar este ejercicio?')) return; gone('c:' + d.id); S.custom = S.custom.filter(c => c.id !== d.id); S.routines.forEach(r => r.items = r.items.filter(it => it.exId !== d.id)); save(); go('ejercicios', { tab: 'perfil' }); },
   exportData: () => {
     const a = document.createElement('a');
     a.href = URL.createObjectURL(new Blob([JSON.stringify(S)], { type: 'application/json' }));
@@ -1229,6 +1304,8 @@ if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
   navigator.serviceWorker.addEventListener('controllerchange', () => location.reload()); // versión nueva instalada
 }
 render();
+sync(); // al abrir: trae lo de otros dispositivos y sube lo de este
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') sync(); });
 </script>
 </body>
 </html>
