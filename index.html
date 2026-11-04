@@ -73,7 +73,10 @@ button,input,select{font:inherit;color:inherit}
 .day.on{background:var(--acc);color:#111;font-weight:800;cursor:pointer}.day.today{outline:2px solid var(--acc)}
 .rpegrid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:8px 0}.rpegrid .chip{padding:12px;font-size:17px}
 .sh{font-size:12px;color:var(--mut);margin:10px 0 4px}
-.set{padding:4px 0;border-radius:10px}.set.done{background:rgba(47,191,113,.14)}
+.setwrap{position:relative;border-radius:10px;overflow:hidden;margin:2px 0}
+.swbg{position:absolute;inset:0;background:#6e2424;color:#fff;display:flex;align-items:center;justify-content:flex-end;padding-right:18px;font-weight:700;transition:background .15s}
+.setwrap.armed .swbg{background:var(--bad)}
+.set{position:relative;padding:4px 0;border-radius:10px;background:var(--card);touch-action:pan-y}.set.done{background:#1e342c}
 .set input{width:100%;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:9px 4px;text-align:center}
 .set.done input{border-color:transparent;background:transparent}
 .prev{background:none;border:0;color:var(--mut);font-size:14px;cursor:pointer}
@@ -156,7 +159,7 @@ table{width:100%;border-collapse:collapse;font-size:15px}td{padding:4px 0}td:las
   <button class="btn wide" data-a="wheelDone">Listo</button></div></div>
 <script src="ejercicios.js"></script>
 <script>
-const VERSION = 15; // súbelo junto con C en sw.js
+const VERSION = 16; // súbelo junto con C en sw.js
 const MUSCLES =['Pecho','Espalda','Hombros','Brazos','Piernas','Core'];
 const RESTS = Array.from({ length: 41 }, (_, i) => i * 15); // 0 a 10 min, de 15 en 15 s
 const RING = 119.38; // perímetro del anillo de descanso (2π·19)
@@ -255,7 +258,7 @@ function pEntreno() {
     <div class="card">
       <input class="title-in" data-w="name" value="${esc(a.name)}" aria-label="Nombre del entreno">
       <div class="stats"><div><small>Duración</small><b id="elapsed"></b></div><div><small>Volumen</small><b id="vol">${fmtKg(vol(a))}</b></div><div><small>Series</small><b id="nsets">${nsets(a)}</b></div></div>
-      <div class="row between" style="margin-top:10px"><small>Toca el nº de serie para cambiar su tipo o borrarla.</small>
+      <div class="row between" style="margin-top:10px"><small>Toca el nº de serie para cambiar su tipo. Desliza una serie a la izquierda para borrarla.</small>
         <button class="btn ghost sm" data-a="openDiscos">🧮 Discos</button></div>
     </div>
     ${a.items.map(exCard).join('')}
@@ -275,13 +278,13 @@ function exCard(it, i) {
       <button class="restchip" data-a="noteOpen" data-id="${it.exId}">📝 Nota</button></div>
     ${note || noteOpen === it.exId ? `<div class="noterow"><span aria-hidden="true">🗒</span><input class="note" data-note="${it.exId}" id="note-${it.exId}" value="${esc(note)}" placeholder="Escribe una nota (asiento, agarre…)"></div>` : ''}
     <div class="sh"><span>Serie</span><span>Anterior</span><span>kg</span><span>Reps</span><span>RPE</span><span>✓</span></div>
-    ${it.sets.map((s, j) => { const p = prev[j]; return `<div class="set ${s.done ? 'done' : ''}">
+    ${it.sets.map((s, j) => { const p = prev[j]; return `<div class="setwrap"><div class="swbg" aria-hidden="true">🗑 Borrar</div><div class="set ${s.done ? 'done' : ''}" data-si="${i}" data-sj="${j}">
       <button class="n t-${s.t || ''}" data-a="setMenu" data-i="${i}" data-j="${j}" aria-label="Opciones de la serie">${setLabel(it.sets, j)}</button>
       <button class="prev" data-a="usePrev" data-i="${i}" data-j="${j}" ${p ? '' : 'disabled'}>${p ? `${fmt(p.kg)}×${p.reps}` : '—'}</button>
       <input inputmode="decimal" data-i="${i}" data-j="${j}" data-f="kg" value="${s.kg === '' ? '' : fmt(s.kg)}" placeholder="${p ? fmt(p.kg) : ''}" aria-label="kg">
       <input inputmode="numeric" data-i="${i}" data-j="${j}" data-f="reps" value="${s.reps}" placeholder="${p ? p.reps : esc(it.target || '')}" aria-label="Repeticiones">
       <button class="rpe ${s.rpe ? 'on' : ''}" data-a="rpeMenu" data-i="${i}" data-j="${j}" aria-label="RPE (esfuerzo)">${s.rpe ? fmt(s.rpe) : '◔'}</button>
-      <button class="chk" data-a="toggle" data-i="${i}" data-j="${j}" aria-label="Completar serie">✓</button></div>`; }).join('')}
+      <button class="chk" data-a="toggle" data-i="${i}" data-j="${j}" aria-label="Completar serie">✓</button></div></div>`; }).join('')}
     <button class="btn ghost wide" style="margin-top:8px" data-a="addSet" data-i="${i}">+ Añadir serie</button>
   </div>`;
 }
@@ -1040,7 +1043,36 @@ document.addEventListener('pointermove', e => {
 const endPress = () => { if (press) clearTimeout(press.t); press = null; if (drag) endDrag(); };
 document.addEventListener('pointerup', endPress);
 document.addEventListener('pointercancel', endPress);
-document.addEventListener('touchmove', e => { if (drag) e.preventDefault(); }, { passive: false }); // que no haga scroll mientras arrastras
+document.addEventListener('touchmove', e => { if (drag || sw?.on) e.preventDefault(); }, { passive: false }); // que no haga scroll mientras arrastras
+
+// --- deslizar una serie a la izquierda para borrarla (se pone roja al pasar el 35 %) ---
+let sw = null;
+document.addEventListener('pointerdown', e => { const row = e.target.closest('.set[data-si]'); if (row && !drag) sw = { row, x: e.clientX, y: e.clientY, dx: 0, on: false }; });
+document.addEventListener('pointermove', e => {
+  if (!sw) return;
+  const dx = e.clientX - sw.x, dy = e.clientY - sw.y;
+  if (!sw.on) {
+    if (Math.abs(dy) > 10 && Math.abs(dy) > Math.abs(dx)) { sw = null; return; } // es un scroll vertical
+    if (dx > -10 || Math.abs(dx) < Math.abs(dy)) return;
+    sw.on = true; sw.row.style.transition = 'none';
+  }
+  sw.dx = Math.min(0, dx);
+  sw.row.style.transform = `translateX(${sw.dx}px)`;
+  sw.row.parentElement.classList.toggle('armed', -sw.dx > sw.row.offsetWidth * .35);
+});
+function swEnd() {
+  if (!sw) return;
+  const { row, dx, on } = sw; sw = null;
+  if (!on) return;
+  swallowClick = true; setTimeout(() => swallowClick = false, 350); // que no marque ✓ ni abra menús al soltar
+  row.style.transition = 'transform .2s ease';
+  if (-dx > row.offsetWidth * .35) {
+    row.style.transform = 'translateX(-100%)'; navigator.vibrate?.(15);
+    setTimeout(() => { S.active.items[row.dataset.si].sets.splice(row.dataset.sj, 1); save(); render(); toast('Serie borrada'); }, 200);
+  } else { row.style.transform = ''; row.parentElement.classList.remove('armed'); }
+}
+document.addEventListener('pointerup', swEnd);
+document.addEventListener('pointercancel', swEnd);
 document.addEventListener('contextmenu', e => { if (e.target.closest('[data-drag]')) e.preventDefault(); });
 function startDrag(mode, from, y) {
   press = null; navigator.vibrate?.(25);
