@@ -3,13 +3,13 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#111214">
+<meta name="theme-color" content="#12151C">
 <title>Forja</title>
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="icon.svg">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <style>
-:root{--bg:#111214;--card:#1b1d21;--line:#2a2d33;--txt:#f1f2f4;--mut:#8b909a;--acc:#ff7a1a;--ok:#2fbf71;--bad:#ff5a5a}
+:root{--bg:#12151C;--card:#1A1F29;--line:#283041;--txt:#E8ECF3;--mut:#8A94A8;--acc:#6EA8FE;--on-acc:#0A1A33;--ok:#3FB37A;--bad:#FF6B6B} /* paleta pizarra y azul hielo */
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{height:100%;overflow:hidden;overscroll-behavior:none}
 body{margin:0;background:var(--bg);color:var(--txt);font:16px/1.4 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;display:flex;flex-direction:column;height:100vh;height:100dvh}
@@ -17,7 +17,7 @@ header{flex:none;z-index:5;background:var(--bg);display:flex;align-items:center;
 h1{font-size:22px;margin:0}h2{font-size:18px;margin:20px 0 8px}
 main{flex:1;min-height:0;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;overscroll-behavior-y:contain;padding:12px max(16px,calc((100% - 608px) / 2)) 120px}
 button,input,select{font:inherit;color:inherit}
-.btn{background:var(--acc);color:#111;border:0;border-radius:12px;padding:12px 16px;font-weight:700;cursor:pointer}
+.btn{background:var(--acc);color:var(--on-acc);border:0;border-radius:12px;padding:12px 16px;font-weight:700;cursor:pointer}
 .btn.big{width:100%;padding:18px;font-size:18px}.btn.wide{width:100%;margin-top:10px}
 .btn.ghost{background:var(--card);color:var(--txt);border:1px solid var(--line)}
 .btn.sm{padding:8px 12px;font-size:14px}.btn.danger{background:transparent;color:var(--bad);border:1px solid var(--line)}
@@ -72,13 +72,13 @@ button,input,select{font:inherit;color:inherit}
 .avatar img{width:100%;height:100%;object-fit:cover}
 .cal{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;text-align:center;margin-top:12px}
 .day{aspect-ratio:1;display:grid;place-items:center;border-radius:50%;font-size:15px;border:0;background:none;color:var(--txt)}
-.day.on{background:var(--acc);color:#111;font-weight:800;cursor:pointer}.day.today{outline:2px solid var(--acc)}
+.day.on{background:var(--acc);color:var(--on-acc);font-weight:800;cursor:pointer}.day.today{outline:2px solid var(--acc)}
 .rpegrid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:8px 0}.rpegrid .chip{padding:12px;font-size:17px}
 .sh{font-size:12px;color:var(--mut);margin:10px 0 4px}
 .setwrap{position:relative;border-radius:10px;overflow:hidden;margin:2px 0}
 .swbg{position:absolute;inset:0;background:#6e2424;color:#fff;display:flex;align-items:center;justify-content:flex-end;padding-right:18px;font-weight:700;transition:background .15s}
 .setwrap.armed .swbg{background:var(--bad)}
-.set{position:relative;padding:4px 0;border-radius:10px;background:var(--card);touch-action:pan-y}.set.done{background:#1e342c}
+.set{position:relative;padding:4px 0;border-radius:10px;background:var(--card);touch-action:pan-y}.set.done{background:#1D3533}
 .set input{width:100%;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:9px 4px;text-align:center}
 .set.done input{border-color:transparent;background:transparent}
 .prev{background:none;border:0;color:var(--mut);font-size:14px;cursor:pointer}
@@ -88,16 +88,16 @@ button,input,select{font:inherit;color:inherit}
 .search{width:100%;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px}
 .chips{display:flex;gap:6px;overflow-x:auto;padding:10px 0}
 .chip{background:var(--card);border:1px solid var(--line);border-radius:999px;padding:6px 12px;white-space:nowrap;cursor:pointer;font-size:14px}
-.chip.on{background:var(--acc);color:#111;border-color:var(--acc)}
+.chip.on{background:var(--acc);color:var(--on-acc);border-color:var(--acc)}
 .li{display:flex;justify-content:space-between;width:100%;background:none;border:0;border-bottom:1px solid var(--line);padding:14px 2px;text-align:left;cursor:pointer}
 nav{flex:none;z-index:6;display:flex;position:relative;background:var(--card);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom)}
 nav button{position:relative;z-index:1;flex:1;background:none;border:0;transition:color .3s;color:var(--mut);padding:10px 0 12px;font-size:12px;cursor:pointer}
 nav button b{display:block;font-size:20px}nav button.on{color:var(--acc)}
 /* resaltado que se desliza bajo la pestaña activa */
-#navpill{position:absolute;top:6px;left:8px;width:calc((100% - 16px) / 3);height:54px;border-radius:999px;background:rgba(255,122,26,.13);transition:transform .42s cubic-bezier(.3,1.25,.4,1),opacity .25s;pointer-events:none}
+#navpill{position:absolute;top:6px;left:8px;width:calc((100% - 16px) / 3);height:54px;border-radius:999px;background:rgba(110,168,254,.13);transition:transform .42s cubic-bezier(.3,1.25,.4,1),opacity .25s;pointer-events:none}
 ::view-transition-old(barra){animation:none;opacity:0}::view-transition-new(barra){animation:none}
 @media (prefers-reduced-motion:reduce){#navpill{transition:transform .28s ease,opacity .25s}}
-#rest{position:fixed;left:8px;right:8px;bottom:calc(70px + env(safe-area-inset-bottom));z-index:7;max-width:624px;margin:0 auto;background:rgba(38,41,47,.92);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border:1px solid var(--line);border-radius:20px;padding:10px 12px;display:flex;align-items:center;gap:10px;box-shadow:0 10px 30px rgba(0,0,0,.45);transform:translateY(160%);opacity:0;visibility:hidden;pointer-events:none;transition:transform .35s cubic-bezier(.2,.9,.25,1),opacity .25s,visibility 0s .35s}
+#rest{position:fixed;left:8px;right:8px;bottom:calc(70px + env(safe-area-inset-bottom));z-index:7;max-width:624px;margin:0 auto;background:rgba(34,40,54,.92);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border:1px solid var(--line);border-radius:20px;padding:10px 12px;display:flex;align-items:center;gap:10px;box-shadow:0 10px 30px rgba(0,0,0,.45);transform:translateY(160%);opacity:0;visibility:hidden;pointer-events:none;transition:transform .35s cubic-bezier(.2,.9,.25,1),opacity .25s,visibility 0s .35s}
 #rest.show{transform:none;opacity:1;visibility:visible;pointer-events:auto;transition-delay:0s}
 .ring{width:48px;height:48px;transform:rotate(-90deg);flex:none}.ring circle{fill:none;stroke-width:4.5}
 .ring .trk{stroke:var(--line)}#restring{stroke:var(--acc);stroke-linecap:round;stroke-dasharray:119.38}
@@ -116,10 +116,10 @@ nav button b{display:block;font-size:20px}nav button.on{color:var(--acc)}
 @keyframes swap{0%,35%{opacity:0}50%,85%{opacity:1}100%{opacity:0}}
 @media (prefers-reduced-motion:reduce){.demo img+img{animation:none;opacity:0}}
 .how{margin:8px 0 0;padding-left:22px}.how li{margin:6px 0}
-.tip{background:rgba(255,122,26,.1);border-radius:10px;padding:10px;margin:10px 0 0}
+.tip{background:rgba(110,168,254,.1);border-radius:10px;padding:10px;margin:10px 0 0}
 .tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
 .tag{border-radius:999px;padding:5px 12px;font-size:14px;background:var(--bg);border:1px solid var(--line)}
-.tag.main{background:var(--acc);color:#111;border-color:var(--acc);font-weight:700}
+.tag.main{background:var(--acc);color:var(--on-acc);border-color:var(--acc);font-weight:700}
 .li{align-items:center;gap:12px}.li span{flex:1}
 h3{margin:0;font-size:16px}
 button.n{background:none;border:0;padding:8px 0;cursor:pointer;font:inherit;font-weight:800;color:var(--mut)}
@@ -131,17 +131,17 @@ button.n{background:none;border:0;padding:8px 0;cursor:pointer;font:inherit;font
 .barend{width:46px;height:12px;background:#8a8f98;border-radius:3px;flex:none}
 .plate{width:24px;border-radius:5px;display:grid;place-items:center;font-size:11px;font-weight:800;flex:none;writing-mode:vertical-rl;transform:rotate(180deg)}
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:0 10px}
-#banner{flex:none;display:block;width:100%;background:var(--acc);color:#111;border:0;font-weight:700;padding:10px;cursor:pointer}
+#banner{flex:none;display:block;width:100%;background:var(--acc);color:var(--on-acc);border:0;font-weight:700;padding:10px;cursor:pointer}
 #sheet{position:fixed;inset:0;z-index:9;background:rgba(0,0,0,.6);display:flex;align-items:flex-end}
 #sheet .in{background:var(--bg);width:100%;max-width:640px;margin:0 auto;height:88vh;border-radius:18px 18px 0 0;padding:14px 16px;display:flex;flex-direction:column;animation:sheetup .3s cubic-bezier(.2,.9,.25,1)}
 #pickList{overflow-y:auto;flex:1}
 #ptr{position:fixed;top:calc(env(safe-area-inset-top) - 40px);left:50%;width:40px;height:40px;border-radius:50%;background:var(--card);border:1px solid var(--line);color:var(--acc);display:grid;place-items:center;font-size:22px;font-weight:800;z-index:20;opacity:0;transform:translate(-50%,0);pointer-events:none;box-shadow:0 6px 18px rgba(0,0,0,.4)}
-#ptr.ready{background:var(--acc);color:#111}#ptr.spin{animation:ptrspin .6s linear infinite}
+#ptr.ready{background:var(--acc);color:var(--on-acc)}#ptr.spin{animation:ptrspin .6s linear infinite}
 @keyframes ptrspin{from{transform:translate(-50%,110px) rotate(0)}to{transform:translate(-50%,110px) rotate(360deg)}}
-#toast{position:fixed;top:calc(70px + env(safe-area-inset-top));left:50%;transform:translateX(-50%);background:#26292f;border:1px solid var(--line);padding:10px 16px;border-radius:12px;z-index:10;opacity:0;transition:opacity .2s;pointer-events:none;max-width:90vw}
+#toast{position:fixed;top:calc(70px + env(safe-area-inset-top));left:50%;transform:translateX(-50%);background:#222836;border:1px solid var(--line);padding:10px 16px;border-radius:12px;z-index:10;opacity:0;transition:opacity .2s;pointer-events:none;max-width:90vw}
 #toast.on{opacity:1}
 .chart{width:100%;height:auto;background:var(--bg);border-radius:12px}.ct{fill:var(--mut);font-size:11px}
-.prog{margin:8px 0 2px;padding:8px 12px;border-radius:10px;background:var(--bg);font-size:14px;color:var(--txt)}.prog.up{background:rgba(255,122,26,.15);border:1px solid var(--acc)}
+.prog{margin:8px 0 2px;padding:8px 12px;border-radius:10px;background:var(--bg);font-size:14px;color:var(--txt)}.prog.up{background:rgba(110,168,254,.15);border:1px solid var(--acc)}
 .hero{text-align:center}.bigkg{font-size:44px;font-weight:900;margin:2px 0}.cmpemoji{font-size:72px;line-height:1.25;margin:6px 0}.upc{color:var(--ok)}.downc{color:var(--bad)}.mut{color:var(--mut)}
 .cnt{display:flex;align-items:center;gap:6px}.cnt b{min-width:22px;text-align:center}
 .field{width:100%;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px;margin:6px 0}
@@ -222,7 +222,7 @@ button:active:not(:disabled),.tap:active{transform:scale(.97)}
   <button class="btn wide" data-a="wheelDone">Listo</button></div></div>
 <script src="ejercicios.js"></script>
 <script>
-const VERSION = 27; // súbelo junto con C en sw.js
+const VERSION = 28; // súbelo junto con C en sw.js
 const MUSCLES =['Pecho','Espalda','Hombros','Brazos','Piernas','Core'];
 const RESTS = Array.from({ length: 41 }, (_, i) => i * 15); // 0 a 10 min, de 15 en 15 s
 const RING = 119.38; // perímetro del anillo de descanso (2π·19)
@@ -668,36 +668,36 @@ async function shareResumen(id, kind = 'resumen') {
   const c = document.createElement('canvas'); c.width = 1080; c.height = 1350;
   const g = c.getContext('2d'), F = 'system-ui, -apple-system, Segoe UI, Roboto, sans-serif';
   const fit = (t, max) => { while (g.measureText(t).width > max && t.length > 4) t = t.slice(0, -2) + '…'; return t; };
-  g.fillStyle = '#111214'; g.fillRect(0, 0, 1080, 1350);
-  g.fillStyle = '#ff7a1a'; [[80, 92, 18, 60], [182, 92, 18, 60], [101, 104, 12, 36], [167, 104, 12, 36], [113, 116, 54, 12]].forEach(([x, y, ww, h]) => g.fillRect(x, y, ww, h));
+  g.fillStyle = '#12151C'; g.fillRect(0, 0, 1080, 1350);
+  g.fillStyle = '#6EA8FE'; [[80, 92, 18, 60], [182, 92, 18, 60], [101, 104, 12, 36], [167, 104, 12, 36], [113, 116, 54, 12]].forEach(([x, y, ww, h]) => g.fillRect(x, y, ww, h));
   g.font = `800 52px ${F}`; g.fillText('FORJA', 230, 140);
   if (kind === 'cmp') { // "Hoy has levantado X kg · ¡Como levantar N elefantes!"
     const cm = compare(vol(w)), E = '"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif';
     g.textAlign = 'center';
-    g.fillStyle = '#8b909a'; g.font = `500 44px ${F}`; g.fillText('Hoy has levantado', 540, 330);
-    g.fillStyle = '#f1f2f4'; g.font = `900 150px ${F}`; g.fillText(fmtKg(vol(w)), 540, 490);
+    g.fillStyle = '#8A94A8'; g.font = `500 44px ${F}`; g.fillText('Hoy has levantado', 540, 330);
+    g.fillStyle = '#E8ECF3'; g.font = `900 150px ${F}`; g.fillText(fmtKg(vol(w)), 540, 490);
     const n = Math.min(3, cm.n), size = n === 1 ? 300 : n === 2 ? 240 : 190;
     g.font = `${size}px ${E}`; g.fillText(cm.emoji.repeat(n), 540, 860);
-    g.fillStyle = '#ff7a1a'; g.font = `800 58px ${F}`; g.fillText(fit(cm.text, 960), 540, 1010);
-    g.fillStyle = '#8b909a'; g.font = `400 34px ${F}`; g.fillText(fit(`${w.name} · ${new Date(w.start).toLocaleDateString('es', { day: 'numeric', month: 'long' })}`, 960), 540, 1080);
+    g.fillStyle = '#6EA8FE'; g.font = `800 58px ${F}`; g.fillText(fit(cm.text, 960), 540, 1010);
+    g.fillStyle = '#8A94A8'; g.font = `400 34px ${F}`; g.fillText(fit(`${w.name} · ${new Date(w.start).toLocaleDateString('es', { day: 'numeric', month: 'long' })}`, 960), 540, 1080);
     g.textAlign = 'left';
-    if (S.profile.name) { g.fillStyle = '#8b909a'; g.font = `500 34px ${F}`; g.textAlign = 'right'; g.fillText(fit(S.profile.name, 500), 1000, 1280); g.textAlign = 'left'; }
+    if (S.profile.name) { g.fillStyle = '#8A94A8'; g.font = `500 34px ${F}`; g.textAlign = 'right'; g.fillText(fit(S.profile.name, 500), 1000, 1280); g.textAlign = 'left'; }
     g.font = `400 28px ${F}`; g.fillText('Entrenado con Forja', 80, 1280);
   } else {
-    g.fillStyle = '#f1f2f4'; g.font = `800 64px ${F}`; g.fillText(fit(w.name, 920), 80, 260);
-    g.fillStyle = '#8b909a'; g.font = `400 34px ${F}`; g.fillText(new Date(w.start).toLocaleDateString('es', { weekday: 'long', day: 'numeric', month: 'long' }), 80, 315);
+    g.fillStyle = '#E8ECF3'; g.font = `800 64px ${F}`; g.fillText(fit(w.name, 920), 80, 260);
+    g.fillStyle = '#8A94A8'; g.font = `400 34px ${F}`; g.fillText(new Date(w.start).toLocaleDateString('es', { weekday: 'long', day: 'numeric', month: 'long' }), 80, 315);
     [['Duración', fdur(w.end - w.start)], ['Volumen', fmtKg(vol(w))], ['Series', String(nsets(w))], ['Récords', prs.length ? '🏅 ' + prs.length : '—']].forEach(([l, v], i) => {
-      const x = 80 + i * 235; g.fillStyle = '#1b1d21'; g.fillRect(x, 370, 215, 150);
-      g.fillStyle = '#8b909a'; g.font = `400 28px ${F}`; g.fillText(l, x + 22, 418); g.fillStyle = '#f1f2f4'; g.font = `800 40px ${F}`; g.fillText(fit(v, 180), x + 22, 480);
+      const x = 80 + i * 235; g.fillStyle = '#1A1F29'; g.fillRect(x, 370, 215, 150);
+      g.fillStyle = '#8A94A8'; g.font = `400 28px ${F}`; g.fillText(l, x + 22, 418); g.fillStyle = '#E8ECF3'; g.font = `800 40px ${F}`; g.fillText(fit(v, 180), x + 22, 480);
     });
     let y = 590;
     const section = (title, list, right) => { // título naranja y filas "ejercicio ··· dato" mientras quepan
       if (!list.length || y > 1150) return;
-      g.fillStyle = '#ff7a1a'; g.font = `800 36px ${F}`; g.fillText(title, 80, y); y += 58;
+      g.fillStyle = '#6EA8FE'; g.font = `800 36px ${F}`; g.fillText(title, 80, y); y += 58;
       for (const r of list) {
         if (y > 1200) break;
-        g.fillStyle = '#f1f2f4'; g.font = `600 34px ${F}`; g.fillText(fit(ex(r.it.exId).name, 600), 80, y);
-        g.fillStyle = '#8b909a'; g.font = `400 32px ${F}`; g.textAlign = 'right'; g.fillText(right(r), 1000, y); g.textAlign = 'left'; y += 56;
+        g.fillStyle = '#E8ECF3'; g.font = `600 34px ${F}`; g.fillText(fit(ex(r.it.exId).name, 600), 80, y);
+        g.fillStyle = '#8A94A8'; g.font = `400 32px ${F}`; g.textAlign = 'right'; g.fillText(right(r), 1000, y); g.textAlign = 'left'; y += 56;
       }
       y += 30;
     };
@@ -705,7 +705,7 @@ async function shareResumen(id, kind = 'resumen') {
     section('🏅 Récords de hoy', prs, best);
     section('⬆️ Próxima vez, sube a', rows.filter(r => r.up), r => `${fmt(r.next)} kg × ${REP_MIN}`);
     section(prs.length ? 'Resto de ejercicios' : 'Ejercicios', rows.filter(r => !r.pr), best);
-    g.fillStyle = '#8b909a'; g.font = `400 28px ${F}`; g.fillText('Entrenado con Forja', 80, 1280);
+    g.fillStyle = '#8A94A8'; g.font = `400 28px ${F}`; g.fillText('Entrenado con Forja', 80, 1280);
   }
   const blob = await new Promise(ok => c.toBlob(ok, 'image/png')), file = new File([blob], kind === 'cmp' ? 'forja-levantado.png' : 'forja-entreno.png', { type: 'image/png' });
   try {
