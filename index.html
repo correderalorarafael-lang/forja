@@ -7,6 +7,7 @@
 <title>Forja</title>
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="icon.svg">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
 <style>
 :root{--bg:#111214;--card:#1b1d21;--line:#2a2d33;--txt:#f1f2f4;--mut:#8b909a;--acc:#ff7a1a;--ok:#2fbf71;--bad:#ff5a5a}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -163,7 +164,7 @@ table{width:100%;border-collapse:collapse;font-size:15px}td{padding:4px 0}td:las
   <button class="btn wide" data-a="wheelDone">Listo</button></div></div>
 <script src="ejercicios.js"></script>
 <script>
-const VERSION = 17; // súbelo junto con C en sw.js
+const VERSION = 18; // súbelo junto con C en sw.js
 const MUSCLES =['Pecho','Espalda','Hombros','Brazos','Piernas','Core'];
 const RESTS = Array.from({ length: 41 }, (_, i) => i * 15); // 0 a 10 min, de 15 en 15 s
 const RING = 119.38; // perímetro del anillo de descanso (2π·19)
@@ -216,7 +217,14 @@ function linkSS(list, i) {
 }
 
 // --- navegación ---
-let V = S.active ? { p: 'entreno', tab: 'entreno' } : { p: 'inicio', tab: 'inicio' }, draft = null, picker = null;
+// Al recargar se vuelve a la misma pantalla (sessionStorage dura mientras la app sigue abierta).
+// Las pantallas que dependen de algo a medio hacer (editor, importaciones) vuelven a su pestaña.
+const VIEW_KEY = 'forja-vista', VOLATILE = ['rutina', 'importar', 'importarHist'];
+function savedView() {
+  try { const v = JSON.parse(sessionStorage.getItem(VIEW_KEY)); if (v?.p && v.tab) return VOLATILE.includes(v.p) ? { p: v.tab, tab: v.tab } : v; } catch {}
+  return null;
+}
+let V = savedView() || (S.active ? { p: 'entreno', tab: 'entreno' } : { p: 'inicio', tab: 'inicio' }), draft = null, picker = null;
 const F = { lib: { q: '', m: '' }, pick: { q: '', m: '' } };
 function go(p, extra = {}) {
   if (!TABS.includes(p)) history.pushState(null, '');
@@ -227,12 +235,14 @@ addEventListener('popstate', () => { if (menu) closeMenu(); else if (wheel) clos
 
 function render() {
   const pages = { inicio: pInicio, perfil: pPerfil, stats: pStats, calendario: pCalendario, entreno: pEntreno, ejercicios: pEjercicios, ajustes: pAjustes, rutina: pRutina, rutinaVer: pRutinaVer, importar: pImportar, importarHist: pImportarHist, cuerpo: pCuerpo, discos: pDiscos, workout: pWorkout, ejercicio: pEjercicio };
+  if (!pages[V.p]) V = { p: 'inicio', tab: 'inicio' }; // pantalla guardada que ya no existe
   const [title, html] = pages[V.p]();
   $('#title').textContent = title;
   $('#finishBtn').hidden = !(S.active && V.p === 'entreno');
   $('#view').innerHTML = html;
   document.querySelectorAll('nav button').forEach(b => b.classList.toggle('on', b.dataset.tab === V.tab));
   renderSheet(); tick();
+  try { sessionStorage.setItem(VIEW_KEY, JSON.stringify(V)); } catch {}
 }
 function toast(msg) { const t = $('#toast'); t.textContent = msg; t.classList.add('on'); clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.remove('on'), 3000); }
 
@@ -568,6 +578,11 @@ function pAjustes() {
       <button class="btn wide" data-a="hevyCsvPick">Elegir archivo .csv</button><input type="file" id="hevyCsv" accept=".csv,text/csv,text/comma-separated-values" hidden></div>
     <div class="card"><b>Herramientas</b><button class="btn ghost wide" data-a="openDiscos">🧮 Calculadora de discos</button></div>
     <p class="muted">${S.workouts.length} entrenos · ${S.routines.length} rutinas · ${S.custom.length} ejercicios propios</p>
+    <div class="card"><b>Aviso de fin de descanso</b>
+      <p class="muted">Suenan unas campanas de ring y llega una notificación de Forja. ${!window.Notification ? 'Este navegador no admite notificaciones; en iPhone, abre Forja desde el icono de la pantalla de inicio.'
+        : Notification.permission === 'granted' ? '✅ Notificaciones activadas.' : Notification.permission === 'denied' ? '🚫 Las notificaciones están bloqueadas: actívalas en Ajustes del móvil → Notificaciones → Forja.' : ''}</p>
+      ${window.Notification && Notification.permission === 'default' ? '<button class="btn wide" data-a="notifAsk">Activar notificaciones</button>' : ''}
+      <button class="btn ghost wide" data-a="bellTest">🔔 Probar campanas</button></div>
     <p class="muted">Forja versión ${VERSION}</p>`];
 }
 // --- calculadora de discos ---
@@ -711,9 +726,30 @@ function renderSheet() {
 
 // --- temporizadores ---
 let ac;
+// Campana de ring sintetizada (no es un audio grabado): parciales inarmónicos con caída larga.
+function bell(t0) {
+  for (const [r, a] of [[1, 1], [2.76, .55], [5.4, .3], [8.93, .15]]) {
+    const o = ac.createOscillator(), g = ac.createGain();
+    o.frequency.value = 1150 * r;
+    g.gain.setValueAtTime(0, t0); g.gain.linearRampToValueAtTime(.32 * a, t0 + .004);
+    g.gain.exponentialRampToValueAtTime(.0001, t0 + 1.8 / Math.sqrt(r));
+    o.connect(g).connect(ac.destination); o.start(t0); o.stop(t0 + 1.9);
+  }
+}
+// iOS solo deja sonar audio si se ha "desbloqueado" con un toque; lo hacemos en el primer toque.
+const audioOn = () => { try { ac ??= new AudioContext(); ac.resume(); } catch {} };
+document.addEventListener('touchend', audioOn, { once: true });
+document.addEventListener('click', audioOn, { once: true });
+async function notifyRest() {
+  if (!('Notification' in window) || Notification.permission !== 'granted') return;
+  const reg = await navigator.serviceWorker?.getRegistration();
+  reg?.showNotification('Forja', { body: '¡Descanso terminado! Vuelve a tu entrenamiento 💪', icon: 'icon-192.png', badge: 'icon-192.png',
+    tag: 'descanso', renotify: true, vibrate: [200, 100, 200, 100, 200] });
+}
 function alarm() {
-  navigator.vibrate?.([300, 150, 300]);
-  try { ac ??= new AudioContext(); const o = ac.createOscillator(), g = ac.createGain(); o.frequency.value = 880; g.gain.value = .25; o.connect(g).connect(ac.destination); o.start(); o.stop(ac.currentTime + .5); } catch {}
+  navigator.vibrate?.([200, 100, 200, 100, 200]);
+  try { audioOn(); for (let k = 0; k < 3; k++) bell(ac.currentTime + .05 + k * .42); } catch {} // ding-ding-ding
+  notifyRest();
 }
 function tick() {
   const a = S.active;
@@ -908,7 +944,10 @@ const A = {
       if (s.kg === '') s.kg = p ? p.kg : 0; // sin peso = peso corporal
       s.done = true;
       const midSuperset = it.ss && S.active.items[+d.i + 1]?.ss === it.ss; // en superserie se descansa tras el último ejercicio
-      if (it.rest && !midSuperset) { S.active.restEnd = Date.now() + it.rest * 1000; S.active.restTotal = it.rest; }
+      if (it.rest && !midSuperset) {
+        S.active.restEnd = Date.now() + it.rest * 1000; S.active.restTotal = it.rest;
+        if (window.Notification?.permission === 'default') Notification.requestPermission(); // se pide con un toque, como exige iOS
+      }
     } else s.done = false;
     save(); render();
   },
@@ -959,6 +998,8 @@ const A = {
   restAdj: d => { const a = S.active; a.restEnd += d.d * 1000; a.restTotal = Math.max(a.restTotal, (a.restEnd - Date.now()) / 1000); save(); },
   restSkip: () => { S.active.restEnd = null; save(); tick(); },
   goSub: d => go(d.p, { tab: 'perfil' }),
+  notifAsk: async () => { await Notification.requestPermission(); render(); },
+  bellTest: () => alarm(),
   pMetric: d => { pMetric = d.k; render(); },
   photoPick: () => $('#photoFile').click(),
   nameEdit: () => { const n = prompt('Tu nombre', S.profile.name); if (n != null) { S.profile.name = n.trim(); save(); render(); } },

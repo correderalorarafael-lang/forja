@@ -1,13 +1,18 @@
 // La app (HTML/JS) se pide siempre a internet y solo se usa la copia guardada sin conexión;
 // las fotos de ejercicios se sirven desde la copia (no cambian). Cambia C en cada versión.
-const C = 'forja-v17';
-const SHELL = ['./', 'index.html', 'ejercicios.js', 'manifest.json', 'icon.svg'];
+const C = 'forja-v18';
+const SHELL = ['./', 'index.html', 'ejercicios.js', 'manifest.json', 'icon.svg', 'icon-192.png', 'apple-touch-icon.png'];
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(C).then(c => c.addAll(SHELL.map(u => new Request(u, { cache: 'reload' })))));
   self.skipWaiting();
 });
 self.addEventListener('activate', e => e.waitUntil(
   caches.keys().then(ks => Promise.all(ks.filter(k => k !== C).map(k => caches.delete(k)))).then(() => self.clients.claim())));
+// Tocar la notificación de fin de descanso: vuelve a Forja (o la abre).
+self.addEventListener('notificationclick', e => {
+  e.notification.close();
+  e.waitUntil(clients.matchAll({ type: 'window', includeUncontrolled: true }).then(cs => cs[0] ? cs[0].focus() : clients.openWindow('./')));
+});
 self.addEventListener('fetch', e => {
   const url = new URL(e.request.url);
   if (e.request.method !== 'GET' || url.origin !== location.origin) return;
