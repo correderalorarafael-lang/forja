@@ -33,7 +33,7 @@ button,input,select{font:inherit;color:inherit}
 .ex-head{user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;touch-action:manipulation}
 .ex-head .exname{flex:1;display:flex;align-items:center;gap:10px}
 .grip{color:var(--mut);font-size:18px;line-height:1}
-.thumb{width:40px;height:40px;border-radius:50%;object-fit:cover;background:#fff;flex:none;border:1px solid var(--line)}
+.thumb{width:40px;height:40px;border-radius:50%;object-fit:cover;background:var(--line);flex:none;border:1px solid var(--line)}
 .thumb.ph{display:inline-grid;place-items:center;background:var(--line);color:var(--txt);font-weight:700}
 .exrows{display:flex;flex-direction:column;gap:8px;margin-top:10px;font-size:15px}
 .bars{display:flex;flex-direction:column;gap:8px;margin:12px 0 8px}
@@ -222,7 +222,7 @@ button:active:not(:disabled),.tap:active{transform:scale(.97)}
   <button class="btn wide" data-a="wheelDone">Listo</button></div></div>
 <script src="ejercicios.js"></script>
 <script>
-const VERSION = 28; // súbelo junto con C en sw.js
+const VERSION = 29; // súbelo junto con C en sw.js
 const MUSCLES =['Pecho','Espalda','Hombros','Brazos','Piernas','Core'];
 const RESTS = Array.from({ length: 41 }, (_, i) => i * 15); // 0 a 10 min, de 15 en 15 s
 const RING = 119.38; // perímetro del anillo de descanso (2π·19)
@@ -406,7 +406,8 @@ function exCard(it, i) {
     <button class="btn ghost wide" style="margin-top:8px" data-a="addSet" data-i="${i}">+ Añadir serie</button>
   </div>`;
 }
-const thumb = e => e.img ? `<img class="thumb" src="img/${e.id}-0.jpg" alt="" loading="lazy">` : `<span class="thumb ph">${esc((e.name || '?')[0])}</span>`;
+// Sin carga diferida: al re-pintar (p. ej. al marcar ✓) la foto sale al instante desde la caché, sin parpadeo.
+const thumb = e => e.img ? `<img class="thumb" src="img/${e.id}-0.jpg" alt="" decoding="sync">` : `<span class="thumb ph">${esc((e.name || '?')[0])}</span>`;
 const restTxt = s => !s ? 'sin descanso' : s < 60 ? `${s} s` : `${Math.floor(s / 60)} min${s % 60 ? ` ${s % 60} s` : ''}`;
 // mode: 'restStep' = ejercicio del entreno en curso, 'rtRest' = ejercicio del editor de rutinas
 const restStepper = (mode, i, v) => `<button class="restchip" data-a="restPick" data-m="${mode}" data-i="${i}">⏱ Descanso: <b>${v ? restTxt(v) : 'sin descanso'}</b></button>`;
