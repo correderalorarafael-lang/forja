@@ -177,6 +177,11 @@ button.n{background:none;border:0;padding:8px 0;cursor:pointer;font:inherit;font
 #toast{position:fixed;top:calc(70px + env(safe-area-inset-top));left:50%;transform:translateX(-50%);background:#222836;border:1px solid var(--line);padding:10px 16px;border-radius:12px;z-index:10;opacity:0;transition:opacity .2s;pointer-events:none;max-width:90vw}
 #toast.on{opacity:1}
 .chart{width:100%;height:auto;background:var(--bg);border-radius:12px}.ct{fill:var(--mut);font-size:11px}
+.week-chart{touch-action:pan-y;user-select:none;-webkit-user-select:none;cursor:crosshair;outline:none}
+.week-chart:focus-visible{outline:2px solid var(--acc);outline-offset:3px;border-radius:12px}
+.week-bar{transition:opacity .12s ease,filter .12s ease;pointer-events:all}
+.week-bar.is-selected{opacity:1!important;filter:drop-shadow(0 0 5px rgba(183,154,255,.62))}
+.week-readout{min-height:27px;display:flex;align-items:baseline;gap:8px;font-variant-numeric:tabular-nums}
 .prog{margin:8px 0 2px;padding:8px 12px;border-radius:10px;background:var(--bg);font-size:14px;color:var(--txt)}.prog.up{background:rgba(183,154,255,.15);border:1px solid var(--acc)}
 .hero{text-align:center}.bigkg{font-size:44px;font-weight:900;margin:2px 0}.cmpemoji{font-size:72px;line-height:1.25;margin:6px 0}.upc{color:var(--ok)}.downc{color:var(--bad)}.mut{color:var(--mut)}
 .cnt{display:flex;align-items:center;gap:6px}.cnt b{min-width:22px;text-align:center}
@@ -338,7 +343,7 @@ nav button b{font-size:19px}
   <button class="btn wide" data-a="wheelDone">Listo</button></div></div>
 <script src="ejercicios.js"></script>
 <script>
-const VERSION = 36; // súbelo junto con C en sw.js
+const VERSION = 37; // súbelo junto con C en sw.js
 const MUSCLES =['Pecho','Espalda','Hombros','Brazos','Piernas','Core'];
 const RESTS = Array.from({ length: 41 }, (_, i) => i * 15); // 0 a 10 min, de 15 en 15 s
 const RING = 119.38; // perímetro del anillo de descanso (2π·19)
@@ -1079,14 +1084,52 @@ function weeklyChart(metric = 'vol', chips = false) {
   const vals = weeks.map(s => S.workouts.filter(w => w.start >= s && w.start < s + 7 * 864e5).reduce((t, w) => t + of(w), 0));
   const mx = Math.max(...vals, metric === 'dur' ? .5 : 1), W = 320, H = 150, bw = (W - 20) / 12;
   const day = t => new Date(t).toLocaleDateString('es', { day: 'numeric', month: 'short' });
+  const period = i => i === 11 ? 'Esta semana' : `${day(weeks[i])} – ${day(weeks[i] + 6 * 864e5)}`;
+  const ariaValue = `${period(11)}: ${show(vals[11])}`;
   return `<div class="card"><div class="row between"><h3>${label} por semana</h3><small>Últimos 3 meses</small></div>
-    <p style="margin:6px 0"><b>${show(vals[11])}</b> <small>esta semana</small></p>
-    <svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="${label} por semana de las últimas 12 semanas">
-    ${vals.map((v, i) => { const h = (H - 36) * v / mx; return `<rect x="${10 + i * bw + 2}" y="${H - 18 - h}" width="${bw - 4}" height="${h}" rx="3" fill="var(--acc)" opacity="${i === 11 ? 1 : .6}"><title>${day(weeks[i])}: ${show(v)}</title></rect>`; }).join('')}
+    <p class="week-readout" style="margin:6px 0"><b data-week-value>${show(vals[11])}</b> <small data-week-period>Esta semana · desliza para explorar</small></p>
+    <svg class="chart week-chart" viewBox="0 0 ${W} ${H}" data-week-chart data-week-selected="11" role="slider" aria-orientation="horizontal" aria-label="${label} por semana. Desliza o usa las flechas para recorrer las últimas 12 semanas." aria-valuemin="0" aria-valuemax="11" aria-valuenow="11" aria-valuetext="${esc(ariaValue)}" tabindex="0">
+    ${vals.map((v, i) => { const h = (H - 36) * v / mx; return `<rect class="week-bar ${i === 11 ? 'is-selected' : ''}" data-week-index="${i}" data-week-label="${esc(period(i))}" data-week-value="${esc(show(v))}" x="${10 + i * bw + 2}" y="${H - 18 - h}" width="${bw - 4}" height="${h}" rx="3" fill="var(--acc)" opacity="${i === 11 ? 1 : .4}"><title>${period(i)}: ${show(v)}</title></rect>`; }).join('')}
     <text x="10" y="12" class="ct">${show(mx)}</text>${[0, 4, 8].map(i => `<text x="${10 + i * bw + 2}" y="${H - 4}" class="ct">${day(weeks[i])}</text>`).join('')}
     <text x="${W - 10}" y="${H - 4}" class="ct" text-anchor="end">esta sem.</text></svg>
     ${chips ? `<div class="chips">${Object.entries(METRICS).map(([k, [l]]) => `<button class="chip ${k === metric ? 'on' : ''}" data-a="pMetric" data-k="${k}">${l}</button>`).join('')}</div>` : ''}</div>`;
 }
+function selectWeek(svg, index) {
+  const bars = [...svg.querySelectorAll('.week-bar')], i = Math.max(0, Math.min(bars.length - 1, index)), bar = bars[i];
+  if (!bar) return;
+  svg.dataset.weekSelected = i;
+  svg.setAttribute('aria-valuenow', i);
+  svg.setAttribute('aria-valuetext', `${bar.dataset.weekLabel}: ${bar.dataset.weekValue}`);
+  bars.forEach((b, n) => { b.classList.toggle('is-selected', n === i); b.setAttribute('opacity', n === i ? '1' : '.4'); });
+  const card = svg.closest('.card');
+  card.querySelector('[data-week-value]').textContent = bar.dataset.weekValue;
+  card.querySelector('[data-week-period]').textContent = bar.dataset.weekLabel;
+}
+let weekPointer = null;
+document.addEventListener('pointerdown', e => {
+  const svg = e.target.closest('[data-week-chart]');
+  if (!svg || (e.pointerType !== 'touch' && e.button !== 0)) return;
+  weekPointer = { svg, id: e.pointerId };
+  try { svg.setPointerCapture(e.pointerId); } catch {}
+  const box = svg.getBoundingClientRect(), x = (e.clientX - box.left) / box.width * 320, bw = 300 / 12;
+  selectWeek(svg, Math.round((x - (10 + bw / 2)) / bw));
+});
+document.addEventListener('pointermove', e => {
+  let svg = weekPointer?.id === e.pointerId ? weekPointer.svg : e.pointerType === 'mouse' ? e.target.closest('[data-week-chart]') : null;
+  if (!svg) return;
+  const box = svg.getBoundingClientRect(), x = (e.clientX - box.left) / box.width * 320, bw = 300 / 12;
+  selectWeek(svg, Math.round((x - (10 + bw / 2)) / bw));
+});
+const endWeekPointer = e => { if (weekPointer?.id === e.pointerId) weekPointer = null; };
+document.addEventListener('pointerup', endWeekPointer);
+document.addEventListener('pointercancel', endWeekPointer);
+document.addEventListener('keydown', e => {
+  const svg = e.target.closest?.('[data-week-chart]'); if (!svg) return;
+  const i = +svg.dataset.weekSelected;
+  if (e.key === 'ArrowLeft' || e.key === 'ArrowRight' || e.key === 'Home' || e.key === 'End') {
+    e.preventDefault(); selectWeek(svg, e.key === 'Home' ? 0 : e.key === 'End' ? 11 : i + (e.key === 'ArrowRight' ? 1 : -1));
+  }
+});
 
 // --- importar historial exportado de Hevy (CSV: title, start_time, exercise_title, set_type, weight_kg, reps…) ---
 function parseCSV(t) {
