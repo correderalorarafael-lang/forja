@@ -58,6 +58,26 @@ button,input,select{font:inherit;color:inherit}
 .dots{font-size:24px;line-height:1;padding:4px 10px}
 .noterow{display:flex;gap:8px;align-items:center;margin-top:6px}.noterow .note{flex:1;margin:0}
 #menu{position:fixed;inset:0;z-index:10;background:rgba(0,0,0,.6);display:flex;align-items:flex-end}#menu[hidden]{display:none}
+#ask{position:fixed;inset:0;z-index:15;background:rgba(5,5,12,.72);backdrop-filter:blur(7px);-webkit-backdrop-filter:blur(7px);display:flex;align-items:flex-end;justify-content:center;padding-top:env(safe-area-inset-top)}
+#ask[hidden]{display:none}
+#ask .in{width:100%;max-width:560px;background:linear-gradient(160deg,#222136,var(--card) 45%);border:1px solid rgba(183,154,255,.2);border-bottom:0;border-radius:26px 26px 0 0;padding:10px 22px calc(22px + env(safe-area-inset-bottom));box-shadow:0 -18px 60px rgba(0,0,0,.38);animation:ask-in .34s cubic-bezier(.2,.85,.24,1)}
+#ask .handle{margin-bottom:22px}
+#ask .ask-mark{width:46px;height:46px;display:grid;place-items:center;border:1px solid rgba(183,154,255,.18);border-radius:15px;background:rgba(183,154,255,.1);color:var(--acc);margin-bottom:15px}
+#ask .ask-mark .ui-icon{width:24px;height:24px}
+#ask h2{font-size:22px;letter-spacing:-.035em;margin:0 0 6px}
+#ask p{margin:0 0 18px;color:var(--mut);line-height:1.5}
+#ask input{width:100%;height:52px;background:var(--bg);border:1px solid var(--line);border-radius:14px;padding:0 15px;margin:3px 0 16px;transition:border-color .2s,box-shadow .2s}
+#ask input:focus{outline:none;border-color:var(--acc);box-shadow:0 0 0 3px rgba(183,154,255,.13)}
+#ask .ask-error{display:block;color:var(--bad);font-size:12px;margin:-10px 0 12px}#ask .ask-error[hidden]{display:none}
+#ask .ask-actions{display:grid;grid-template-columns:1fr 1.2fr;gap:10px}
+#ask .ask-actions .btn{min-height:48px}
+#ask .ask-actions .btn.danger{background:var(--bad);color:#32131c;border:0}
+#ask.closing{animation:fondo-out .22s ease-in forwards}
+#ask.closing .in{animation:panel-out .22s cubic-bezier(.4,0,1,1) forwards}
+@keyframes ask-in{from{transform:translateY(48px) scale(.985);opacity:0}}
+@media(min-width:640px){#ask{align-items:center;padding:20px}#ask .in{border:1px solid rgba(183,154,255,.2);border-radius:26px;padding:18px 24px 24px;animation:ask-pop .28s cubic-bezier(.2,.85,.24,1)}#ask .handle{display:none}#ask.closing .in{animation:ask-out .18s ease-in forwards}}
+@keyframes ask-pop{from{transform:translateY(12px) scale(.98);opacity:0}}
+@keyframes ask-out{to{transform:translateY(8px) scale(.985);opacity:0}}
 #menu .in{background:var(--card);width:100%;max-width:640px;margin:0 auto;border-radius:22px 22px 0 0;padding:10px 16px calc(16px + env(safe-area-inset-bottom));animation:sheetup .3s cubic-bezier(.2,.9,.25,1);max-height:85vh;overflow-y:auto}
 #menu h3{text-align:center;margin:4px 0 12px}
 .mi{display:flex;gap:14px;align-items:center;width:100%;background:var(--bg);border:0;border-bottom:1px solid var(--line);padding:15px 16px;font-size:17px;text-align:left;color:var(--txt);cursor:pointer}
@@ -221,6 +241,9 @@ html[data-nav=soft]::view-transition-new(root){animation:.2s ease-out both vt-fu
 button,.tap{transition:transform .14s cubic-bezier(.3,.7,.4,1),background-color .2s,opacity .2s}
 button:active:not(:disabled),.tap:active{transform:scale(.97)}
 .btn:active:not(:disabled){opacity:.88}
+.card{transition:border-color .22s ease,box-shadow .22s ease,background-color .22s ease}
+@media(hover:hover){.card.tap:hover,.routine-card:hover{border-color:rgba(183,154,255,.3);box-shadow:0 10px 28px rgba(0,0,0,.16)}.btn:not(:disabled):hover{transform:translateY(-1px)}}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
 
 /* --- FORJA: jerarquía y uso diario --- */
 body{background:radial-gradient(ellipse at 50% -10%,rgba(127,94,191,.13),transparent 38%),var(--bg)}
@@ -270,6 +293,7 @@ nav button b{font-size:19px}
 .routine-card .routine-meta{margin:7px 0 12px 48px;color:var(--mut);font-size:12px;line-height:1.45}
 .routine-card .btn{width:100%;margin:0;padding:11px}
 .folder{margin:12px 0 18px}
+.folder.fresh{animation:tarjeta-in .34s cubic-bezier(.2,.85,.24,1)}
 .fhead{font-size:11px;letter-spacing:.1em;color:#aaa4c2}
 .ex-head{padding-bottom:10px;border-bottom:1px solid rgba(183,154,255,.1)}
 .exname{font-size:15px;line-height:1.25}
@@ -306,14 +330,15 @@ nav button b{font-size:19px}
 <div id="toast"></div>
 <div id="ptr" aria-hidden="true"><svg class="ui-icon" viewBox="0 0 24 24"><path d="M20 11a8 8 0 1 0 2 5m-2-5V5m0 6h-6"/></svg></div>
 <div id="reorder" hidden></div>
-<div id="menu" hidden><div class="in" role="dialog" aria-labelledby="menuTitle"><div class="handle"></div><h3 id="menuTitle"></h3><div id="menuBody"></div></div></div>
+  <div id="menu" hidden><div class="in" role="dialog" aria-labelledby="menuTitle"><div class="handle"></div><h3 id="menuTitle"></h3><div id="menuBody"></div></div></div>
+  <div id="ask" hidden></div>
 <div id="wheel" hidden><div class="in" role="dialog" aria-label="Temporizador de descanso"><div class="handle"></div>
   <h3>Temporizador de descanso</h3><small id="wheelEx"></small>
   <div class="wheel"><div class="wsel"></div><div class="wlist" id="wlist" tabindex="0"></div></div>
   <button class="btn wide" data-a="wheelDone">Listo</button></div></div>
 <script src="ejercicios.js"></script>
 <script>
-const VERSION = 35; // súbelo junto con C en sw.js
+const VERSION = 36; // súbelo junto con C en sw.js
 const MUSCLES =['Pecho','Espalda','Hombros','Brazos','Piernas','Core'];
 const RESTS = Array.from({ length: 41 }, (_, i) => i * 15); // 0 a 10 min, de 15 en 15 s
 const RING = 119.38; // perímetro del anillo de descanso (2π·19)
@@ -321,6 +346,7 @@ const TABS = ['inicio','entreno','perfil','ajustes'];
 // Iconos originales de FORJA: una sola familia SVG, trazo uniforme y sin glifos del sistema.
 const ICONS = {
   add: '<path d="M12 5v14M5 12h14"/>',
+  info: '<circle cx="12" cy="12" r="9"/><path d="M12 11v5m0-8h.01"/>',
   target: '<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/><path d="M12 2v2m10 8h-2"/>',
   arrow: '<path d="M5 12h14m-6-6 6 6-6 6"/>',
   award: '<circle cx="12" cy="8" r="5"/><path d="m8.5 12-1 9 4.5-2.5 4.5 2.5-1-9"/>',
@@ -465,7 +491,7 @@ function go(p, extra = {}) {
   V = { p, tab: sub ? V.tab : p, ...extra };
   navigate(kind, () => { render(); $('#view').scrollTop = 0; });
 }
-addEventListener('popstate', () => { if (menu) closeMenu(); else if (wheel) closeWheel(); else if (picker) { slideOut($('#sheet'), () => { picker = null; render(); if (pickedScroll) $('#view').scrollTo({ top: 1e9, behavior: 'smooth' }); pickedScroll = false; }); } else if (!TABS.includes(V.p)) { V = backStack.pop() || { p: V.tab, tab: V.tab }; navigate('back', () => { render(); $('#view').scrollTop = 0; }); } });
+addEventListener('popstate', () => { if (askResolve) finishAsk(); else if (menu) closeMenu(); else if (wheel) closeWheel(); else if (picker) { slideOut($('#sheet'), () => { picker = null; render(); if (pickedScroll) $('#view').scrollTo({ top: 1e9, behavior: 'smooth' }); pickedScroll = false; }); } else if (!TABS.includes(V.p)) { V = backStack.pop() || { p: V.tab, tab: V.tab }; navigate('back', () => { render(); $('#view').scrollTop = 0; }); } });
 
 function render() {
   const pages = { inicio: pInicio, perfil: pPerfil, stats: pStats, calendario: pCalendario, entreno: pEntreno, ejercicios: pEjercicios, ajustes: pAjustes, rutina: pRutina, rutinaVer: pRutinaVer, importar: pImportar, importarHist: pImportarHist, cuerpo: pCuerpo, discos: pDiscos, workout: pWorkout, resumen: pResumen, ejercicio: pEjercicio };
@@ -499,7 +525,7 @@ function pEntreno() {
         <button class="btn" data-a="startEmpty">+ Entreno libre</button></div></section>
       <div class="quick-actions"><button class="tile" data-a="newRoutine">${uiIcon('add')}<span>Nueva rutina</span></button><button class="tile" data-a="importStart">${uiIcon('down')}<span>Importar</span></button><button class="tile" data-a="newFolder">${uiIcon('folder')}<span>Carpeta</span></button></div>
       <div class="section-head"><h2>Mis rutinas</h2><small>${S.routines.length} en total</small></div>
-      ${S.folders.map(f => { const rs = S.routines.filter(r => r.folder === f.id); return `<div class="folder">
+      ${S.folders.map(f => { const rs = S.routines.filter(r => r.folder === f.id); return `<div class="folder ${fresh === `folder:${f.id}` ? 'fresh' : ''}">
         <div class="row between"><button class="fhead" data-a="folderToggle" data-id="${f.id}" aria-expanded="${!f.closed}">${f.closed ? '▸' : '▾'} ${esc(f.name)} <small>(${rs.length})</small></button>
           <button class="icon dots" data-a="folderMenu" data-id="${f.id}" aria-label="Opciones de la carpeta">⋮</button></div>
         ${f.closed ? '' : rs.map(rCard).join('') || '<p class="muted">Carpeta vacía. Mueve rutinas aquí desde su menú ⋮.</p>'}</div>`; }).join('')}
@@ -1313,7 +1339,7 @@ function openMenu(title, html) {
   menu = { run: null }; history.pushState(null, '');
 }
 // Cerrar un panel: primero se desliza hacia abajo y luego desaparece.
-function slideOut(el, done) { el.classList.add('closing'); setTimeout(() => { el.classList.remove('closing'); el.hidden = true; done(); }, 210); }
+function slideOut(el, done) { el.classList.add('closing'); setTimeout(() => { el.classList.remove('closing'); el.hidden = true; done(); }, 230); }
 function closeMenu() { const run = menu.run; menu = null; slideOut($('#menu'), () => run ? run() : render()); }
 $('#menu').addEventListener('click', e => {
   if (e.target.id === 'menu') return history.back(); // tocar fuera
@@ -1323,13 +1349,53 @@ $('#menu').addEventListener('click', e => {
 const mItem = (icon, label, mi, attrs = '', cls = '') => {
   return `<button class="mi ${cls}" data-mi="${mi}" ${attrs}><span aria-hidden="true">${uiIcon(icon)}</span>${label}</button>`;
 };
+let askResolve = null, askValue = null, askConfig = null, askClosing = false;
+function askForja(config) {
+  if (askResolve) return Promise.resolve(null);
+  askConfig = config; askClosing = false;
+  $('#ask').innerHTML = `<div class="in" role="dialog" aria-modal="true" aria-labelledby="askTitle" aria-describedby="askBody">
+    <div class="handle"></div><div class="ask-mark" aria-hidden="true">${uiIcon(config.icon || 'info')}</div>
+    <h2 id="askTitle">${esc(config.title)}</h2><p id="askBody">${esc(config.body || '')}</p>
+    <form id="askForm" novalidate>${config.mode === 'text' ? `<label class="muted" for="askInput">${esc(config.label || 'Nombre')}</label><input id="askInput" name="value" type="text" maxlength="40" placeholder="${esc(config.placeholder || '')}" value="${esc(config.value || '')}" autocomplete="off" required><small class="ask-error" id="askError" hidden>Escribe un nombre para continuar.</small>` : ''}
+      <div class="ask-actions"><button class="btn ghost" type="button" data-ask-cancel>Cancelar</button><button class="btn ${config.danger ? 'danger' : ''}" type="submit">${esc(config.accept || (config.mode === 'text' ? 'Guardar' : 'Continuar'))}</button></div></form>
+  </div>`;
+  $('#ask').hidden = false;
+  const promise = new Promise(resolve => { askResolve = resolve; });
+  history.pushState({ forjaAsk: true }, '');
+  requestAnimationFrame(() => (config.mode === 'text' ? $('#askInput') : $('#askForm button[type="submit"]'))?.focus());
+  return promise;
+}
+function closeAsk(value = null) { if (!askResolve || askClosing) return; askClosing = true; askValue = value; history.back(); }
+function finishAsk() {
+  if (!askResolve) return;
+  const resolve = askResolve, value = askValue;
+  askResolve = null; askValue = null; askConfig = null; askClosing = false;
+  slideOut($('#ask'), () => { $('#ask').innerHTML = ''; resolve(value); });
+}
+function confirmForja(title, body, { danger = false, accept = 'Continuar', icon = danger ? 'trash' : 'info' } = {}) {
+  return askForja({ mode: 'confirm', title, body, danger, accept, icon }).then(value => value === true);
+}
+function textForja(title, body, options = {}) {
+  return askForja({ mode: 'text', title, body, ...options }).then(value => typeof value === 'string' ? value.trim() : null);
+}
+$('#ask').addEventListener('click', e => { if (e.target.id === 'ask' || e.target.closest('[data-ask-cancel]')) closeAsk(null); });
+$('#ask').addEventListener('input', e => { if (e.target.id === 'askInput' && e.target.value.trim()) $('#askError').hidden = true; });
+$('#ask').addEventListener('submit', e => {
+  e.preventDefault();
+  if (askConfig?.mode === 'text') {
+    const input = $('#askInput'), value = input.value.trim();
+    if (!value) { $('#askError').hidden = false; input.focus(); return; }
+    closeAsk(value);
+  } else closeAsk(true);
+});
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && askResolve) { e.preventDefault(); closeAsk(null); } });
 const reorderHtml = () => S.active.items.map((it, k, l) => `<div class="mi"><span>${k + 1}</span><b style="flex:1;font-weight:500">${esc(ex(it.exId).name)}</b>
   <button class="icon" data-a="moveEx" data-i="${k}" data-d="-1" ${k ? '' : 'disabled'} aria-label="Subir">↑</button><button class="icon" data-a="moveEx" data-i="${k}" data-d="1" ${k < l.length - 1 ? '' : 'disabled'} aria-label="Bajar">↓</button></div>`).join('')
   + `<button class="btn wide" data-mi="done">Listo</button>`;
-function newFolder() {
-  const name = prompt('Nombre de la carpeta (ej. Fuerza, Verano…)')?.trim();
+async function newFolder() {
+  const name = await textForja('Crear carpeta', 'Agrupa tus rutinas para tenerlas siempre a mano.', { label: 'Nombre de la carpeta', placeholder: 'Por ejemplo, Fuerza', icon: 'folder', accept: 'Crear carpeta' });
   if (!name) return null;
-  const f = { id: uid(), name }; S.folders.push(f); save(); return f;
+  const f = { id: uid(), name }; S.folders.push(f); fresh = `folder:${f.id}`; save(); return f;
 }
 async function setPhoto(file) { // recorte cuadrado de 256 px para que ocupe poco
   const img = await createImageBitmap(file), s = 256, k = Math.max(s / img.width, s / img.height), c = document.createElement('canvas');
@@ -1359,10 +1425,10 @@ const MENU = {
   rMove: d => openMenu('Mover a carpeta', S.folders.map(f => mItem('folder', esc(f.name), 'rMoveTo', `data-id="${d.id}" data-f="${f.id}"`)).join('')
     + mItem('copy', 'Sin carpeta', 'rMoveTo', `data-id="${d.id}" data-f=""`) + mItem('add', 'Nueva carpeta…', 'rMoveNew', `data-id="${d.id}"`)),
   rMoveTo: d => { const r = S.routines.find(x => x.id === d.id); if (d.f) r.folder = d.f; else delete r.folder; r.u = Date.now(); save(); render(); },
-  rMoveNew: d => { const f = newFolder(); if (f) MENU.rMoveTo({ id: d.id, f: f.id }); },
+  rMoveNew: async d => { const f = await newFolder(); if (f) MENU.rMoveTo({ id: d.id, f: f.id }); },
   rDel: d => openMenu(`¿Eliminar «${S.routines.find(x => x.id === d.id).name}»?`, mItem('trash', 'Eliminar rutina', 'rDelYes', `data-id="${d.id}"`, 'danger') + mItem('redo', 'Cancelar', 'done')),
   rDelYes: d => { gone('r:' + d.id); S.routines = S.routines.filter(r => r.id !== d.id); save(); render(); toast('Rutina eliminada'); },
-  fRename: d => { const f = S.folders.find(x => x.id === d.id), n = prompt('Nuevo nombre de la carpeta', f.name)?.trim(); if (n) { f.name = n; f.u = Date.now(); save(); } render(); },
+  fRename: async d => { const f = S.folders.find(x => x.id === d.id); if (!f) return; const n = await textForja('Renombrar carpeta', 'Elige un nombre fácil de reconocer.', { label: 'Nombre de la carpeta', value: f.name, icon: 'edit', accept: 'Guardar' }); if (n) { f.name = n; f.u = Date.now(); save(); smooth(render); } },
   fDel: d => { gone('f:' + d.id); S.folders = S.folders.filter(f => f.id !== d.id); S.routines.forEach(r => { if (r.folder === d.id) delete r.folder; }); save(); render(); toast('Carpeta eliminada; sus rutinas siguen en Mis rutinas'); },
   discardAsk: () => openMenu('¿Seguro que quieres descartar el entrenamiento?', `<p class="muted">Se perderán todas las series de este entreno.</p>`
     + mItem('trash', 'Descartar entrenamiento', 'discardYes', '', 'danger') + mItem('redo', 'Cancelar', 'done')),
@@ -1370,8 +1436,8 @@ const MENU = {
 };
 
 // --- acciones ---
-function startWorkout(name, items) {
-  if (S.active && !confirm('Ya tienes un entreno en curso. ¿Descartarlo y empezar otro?')) return;
+async function startWorkout(name, items) {
+  if (S.active && !(await confirmForja('Ya hay un entreno en curso', 'Si empiezas otro, este entreno en curso se descartará.', { danger: true, accept: 'Descartar y empezar', icon: 'weight' }))) return;
   S.active = { id: uid(), name, start: Date.now(), restEnd: null,
     items: items.map(it => ({ exId: it.exId, rest: it.rest ?? S.rest, target: it.reps || '', ...(it.ss && { ss: it.ss }), sets: Array.from({ length: it.sets || 1 }, () => ({ kg: '', reps: '', done: false })) })) };
   save(); go('entreno');
@@ -1421,7 +1487,7 @@ const A = {
     else S.routines.push({ ...draft, id: uid() });
     save(); toast('Rutina guardada'); go('entreno');
   },
-  delRoutine: () => { if (!confirm('¿Eliminar esta rutina?')) return; gone('r:' + draft.id); S.routines = S.routines.filter(r => r.id !== draft.id); save(); go('entreno'); },
+  delRoutine: async () => { if (!(await confirmForja('Eliminar rutina', `Se eliminará «${draft.name}» de tus rutinas.`, { danger: true, accept: 'Eliminar' }))) return; gone('r:' + draft.id); S.routines = S.routines.filter(r => r.id !== draft.id); save(); go('entreno'); },
   pick: d => { picker = d.mode; F.pick = { q: '', m: '' }; history.pushState(null, ''); renderSheet(); },
   closePick: () => history.back(),
   pickEx: d => {
@@ -1432,7 +1498,7 @@ const A = {
     save(); pickedScroll = picker !== 'replace'; history.back();
   },
   chip: d => { F[d.k].m = d.m; if (d.k === 'pick') renderSheet(); else smooth(render); },
-  rmEx: d => { const it = S.active.items[d.i]; if (it.sets.some(s => s.done) && !confirm('¿Quitar este ejercicio y sus series?')) return; S.active.items.splice(d.i, 1); save(); render(); },
+  rmEx: async d => { const it = S.active.items[d.i]; if (it.sets.some(s => s.done) && !(await confirmForja('Quitar ejercicio', 'También se quitarán las series que ya has registrado.', { danger: true, accept: 'Quitar ejercicio' }))) return; S.active.items.splice(d.i, 1); save(); smooth(render); },
   addSet: d => { const l = S.active.items[d.i].sets; l.push({ kg: '', reps: '', done: false }); fresh = `set:${d.i}:${l.length - 1}`; save(); render(); },
   usePrev: d => { const it = S.active.items[d.i], p = prevSets(it.exId)[d.j]; Object.assign(it.sets[d.j], { kg: p.kg, reps: p.reps }); save(); render(); },
   toggle: d => {
@@ -1483,7 +1549,7 @@ const A = {
     if (same) Object.assign(same, e); else S.body.push(e);
     save(); toast('Registro guardado'); render();
   },
-  bodyDel: d => { if (!confirm('¿Borrar este registro?')) return; gone('b:' + d.t); S.body = S.body.filter(x => x.t !== +d.t); save(); render(); },
+  bodyDel: async d => { if (!(await confirmForja('Borrar registro', 'Se eliminarán las medidas guardadas en esta fecha.', { danger: true, accept: 'Borrar' }))) return; gone('b:' + d.t); S.body = S.body.filter(x => x.t !== +d.t); save(); smooth(render); },
   hevyCsvPick: () => $('#hevyCsv').click(),
   histSave: () => {
     const map = {};
@@ -1504,9 +1570,9 @@ const A = {
   bellTest: () => alarm(),
   pMetric: d => { pMetric = d.k; smooth(render); },
   photoPick: () => $('#photoFile').click(),
-  nameEdit: () => { const n = prompt('Tu nombre', S.profile.name); if (n != null) { S.profile.name = n.trim(); save(); render(); } },
+  nameEdit: async () => { const n = await textForja('Tu nombre', 'Así aparecerá en tu perfil y en tus resúmenes.', { label: 'Nombre', value: S.profile.name, placeholder: 'Cómo quieres que te llamemos', icon: 'user', accept: 'Guardar' }); if (n != null) { S.profile.name = n; save(); smooth(render); } },
   calMove: d => { calM = new Date(calM.getFullYear(), calM.getMonth() + +d.d, 1); smooth(render); },
-  newFolder: () => { if (newFolder()) render(); },
+  newFolder: async () => { if (await newFolder()) smooth(render); },
   folderToggle: d => { const f = S.folders.find(x => x.id === d.id); f.closed = !f.closed; f.u = Date.now(); save(); smooth(render); },
   folderMenu: d => { const f = S.folders.find(x => x.id === d.id), a = `data-id="${d.id}"`;
     openMenu(f.name, mItem('edit', 'Renombrar carpeta', 'fRename', a) + mItem('trash', 'Eliminar carpeta', 'fDel', a, 'danger')); },
@@ -1514,13 +1580,13 @@ const A = {
     openMenu(r.name, mItem('edit', 'Editar rutina', 'rEdit', a) + mItem('duplicate', 'Duplicar rutina', 'rDup', a) + mItem('folder', 'Mover a carpeta', 'rMove', a)
       + mItem('trash', 'Eliminar rutina', 'rDel', a, 'danger')); },
   finishMenu: () => openMenu('¿Terminar el entreno?', mItem('check', 'Guardar entreno', 'save') + mItem('trash', 'Descartar', 'discardAsk', '', 'danger')),
-  finish: () => {
+  finish: async () => {
     const a = S.active;
     const items = a.items.map(it => ({ exId: it.exId, ...(it.ss && { ss: it.ss }),
       sets: it.sets.filter(s => s.done).map(s => ({ kg: +s.kg || 0, reps: +s.reps, ...(s.t && { t: s.t }), ...(s.rpe && { rpe: s.rpe }) })) })).filter(it => it.sets.length);
-    if (!items.length) { if (confirm('No has completado ninguna serie. ¿Descartar el entreno?')) { S.active = null; save(); render(); } return; }
+    if (!items.length) { if (await confirmForja('No hay series completadas', 'Puedes descartar este entreno y volver a tus rutinas.', { danger: true, accept: 'Descartar entreno', icon: 'trash' })) { S.active = null; save(); render(); } return; }
     const pending = a.items.reduce((n, it) => n + it.sets.filter(s => !s.done).length, 0);
-    if (pending && !confirm(`Hay ${pending} series sin marcar ✓ que no se guardarán. ¿Terminar?`)) return;
+    if (pending && !(await confirmForja('Quedan series sin marcar', `Hay ${pending} ${pending === 1 ? 'serie' : 'series'} que no se guardarán. ¿Quieres terminar de todas formas?`, { accept: 'Terminar entreno', icon: 'info' }))) return;
     const prs = items.filter(it => { const b = bestE1rm(it.exId); return b > 0 && Math.max(0, ...work(it.sets).map(e1rm)) > b; }).map(it => ex(it.exId).name);
     const w = { id: a.id, name: a.name.trim() || 'Entreno', start: a.start, end: Date.now(), items };
     S.workouts.unshift(w); S.active = null; save(); scheduleRest(null);
@@ -1531,14 +1597,14 @@ const A = {
   openResumen: d => go('resumen', { id: d.id }),
   shareResumen: d => shareResumen(d.id, d.k),
   openEx: d => go('ejercicio', { id: d.id }),
-  delW: d => { if (!confirm('¿Eliminar este entreno del historial?')) return; gone('w:' + d.id); S.workouts = S.workouts.filter(w => w.id !== d.id); save(); go('inicio'); },
+  delW: async d => { if (!(await confirmForja('Eliminar entreno', 'Este entreno desaparecerá de tu historial.', { danger: true, accept: 'Eliminar' }))) return; gone('w:' + d.id); S.workouts = S.workouts.filter(w => w.id !== d.id); save(); go('inicio'); },
   addCustom: () => {
     const name = $('#cName').value.trim();
     if (!name) return toast('Escribe un nombre');
     if (allEx().some(e => norm(e.name) === norm(name))) return toast('Ese ejercicio ya existe');
     S.custom.push({ id: 'c' + uid(), name, muscle: $('#cMuscle').value }); save(); toast('Ejercicio creado'); render();
   },
-  delCustom: d => { if (!confirm('¿Eliminar este ejercicio?')) return; gone('c:' + d.id); S.custom = S.custom.filter(c => c.id !== d.id); S.routines.forEach(r => r.items = r.items.filter(it => it.exId !== d.id)); save(); go('ejercicios', { tab: 'perfil' }); },
+  delCustom: async d => { if (!(await confirmForja('Eliminar ejercicio', 'Se quitará también de las rutinas que lo utilicen.', { danger: true, accept: 'Eliminar' }))) return; gone('c:' + d.id); S.custom = S.custom.filter(c => c.id !== d.id); S.routines.forEach(r => r.items = r.items.filter(it => it.exId !== d.id)); save(); go('ejercicios', { tab: 'perfil' }); },
   exportData: () => {
     const a = document.createElement('a');
     a.href = URL.createObjectURL(new Blob([JSON.stringify(S)], { type: 'application/json' }));
@@ -1571,7 +1637,7 @@ async function importData(file) {
   try {
     const d = JSON.parse(await file.text());
     if (!Array.isArray(d.workouts) || !Array.isArray(d.routines)) throw 0;
-    if (!confirm(`La copia tiene ${d.workouts.length} entrenos. Reemplazará los datos actuales. ¿Continuar?`)) return;
+    if (!(await confirmForja('Importar copia de seguridad', `La copia contiene ${d.workouts.length} entrenos y reemplazará los datos actuales.`, { danger: true, accept: 'Reemplazar datos', icon: 'cloud' }))) return;
     S = { ...defaults(), ...d }; save(); toast('Datos importados'); render();
   } catch { toast('Ese archivo no es una copia válida'); }
 }
