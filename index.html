@@ -153,6 +153,16 @@ button.n{background:none;border:0;padding:8px 0;cursor:pointer;font:inherit;font
 .hero{text-align:center}.bigkg{font-size:44px;font-weight:900;margin:2px 0}.cmpemoji{font-size:72px;line-height:1.25;margin:6px 0}.upc{color:var(--ok)}.downc{color:var(--bad)}.mut{color:var(--mut)}
 .cnt{display:flex;align-items:center;gap:6px}.cnt b{min-width:22px;text-align:center}
 .field{width:100%;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px;margin:6px 0}
+.ui-icon{width:20px;height:20px;display:inline-block;flex:none;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;vertical-align:middle}
+.icon{width:44px;height:44px;display:inline-grid;place-items:center;padding:0;border-radius:12px}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+nav button{min-height:58px}nav button b{height:23px;display:grid;place-items:center;margin-bottom:3px}
+.mi .ui-icon{color:var(--acc)}
+.tile{display:flex;align-items:center;gap:10px;min-height:60px}
+.tile .ui-icon{color:var(--acc)}
+.cmpemoji{font-size:38px;font-weight:800;letter-spacing:-.05em;color:var(--acc)}
+.completion-mark{width:46px;height:46px;margin:0 auto 8px;display:grid;place-items:center;border-radius:15px;background:rgba(183,154,255,.12);color:var(--acc)}
+.completion-mark .ui-icon{width:26px;height:26px}
 table{width:100%;border-collapse:collapse;font-size:15px}td{padding:4px 0}td:last-child{text-align:right;color:var(--mut)}
 /* iOS: con el teclado abierto lo fijado abajo flota a media pantalla; se oculta la barra y el descanso sube */
 body.kb nav{display:none}
@@ -244,7 +254,7 @@ nav button b{font-size:19px}
 .section-head h2{margin:0;font-size:18px}
 .section-head small{font-size:11px}
 .quick-actions{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:12px 0 23px}
-.quick-actions .tile{min-height:72px;display:flex;align-items:center;justify-content:center;text-align:center;padding:10px 7px;font-size:12px}
+.quick-actions .tile{min-height:72px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;text-align:center;padding:10px 7px;font-size:12px}
 .routine-card{padding:15px;margin:9px 0;border-radius:17px}
 .routine-card .routine-top{display:flex;align-items:center;gap:10px}
 .routine-card .routine-icon{width:38px;height:38px;display:grid;place-items:center;flex:none;border-radius:13px;background:rgba(183,154,255,.12);color:var(--acc);font-size:17px}
@@ -272,7 +282,7 @@ nav button b{font-size:19px}
 </style>
 </head>
 <body>
-<header><h1 id="title"></h1><span class="row"><button class="btn sm" id="finishBtn" data-a="finishMenu" hidden>Terminar</button><button class="icon" data-tab="ajustes" aria-label="Ajustes">⚙</button></span></header>
+<header><h1 id="title"></h1><span class="row"><button class="btn sm" id="finishBtn" data-a="finishMenu" hidden>Terminar</button><button class="icon" data-tab="ajustes" aria-label="Ajustes"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h9m4 0h3M4 17h3m4 0h9"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="17" r="2"/></svg></button></span></header>
 <button id="banner" data-tab="entreno" hidden></button>
 <main id="view"></main>
 <div id="rest"><svg class="ring" viewBox="0 0 44 44" aria-hidden="true"><circle class="trk" cx="22" cy="22" r="19"/><circle id="restring" cx="22" cy="22" r="19"/></svg>
@@ -280,13 +290,13 @@ nav button b{font-size:19px}
   <button class="btn ghost sm" data-a="restAdj" data-d="-15">−15</button><button class="btn ghost sm" data-a="restAdj" data-d="15">+15</button><button class="btn sm" data-a="restSkip">Saltar</button></div>
 <nav>
   <span id="navpill" aria-hidden="true"></span>
-  <button data-tab="inicio"><b>🏠</b>Inicio</button>
-  <button data-tab="entreno"><b>🏋</b>Entrenamiento</button>
-  <button data-tab="perfil"><b>👤</b>Perfil</button>
+  <button data-tab="inicio"><b><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1V10Z"/></svg></b>Inicio</button>
+  <button data-tab="entreno"><b><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 9v6m3-9v12m12-12v12m3-9v6M6 12h12"/><path d="M8 8v8m8-8v8"/></svg></b>Entrenamiento</button>
+  <button data-tab="perfil"><b><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg></b>Perfil</button>
 </nav>
 <div id="sheet" hidden></div>
 <div id="toast"></div>
-<div id="ptr" aria-hidden="true">↻</div>
+<div id="ptr" aria-hidden="true"><svg class="ui-icon" viewBox="0 0 24 24"><path d="M20 11a8 8 0 1 0 2 5m-2-5V5m0 6h-6"/></svg></div>
 <div id="reorder" hidden></div>
 <div id="menu" hidden><div class="in" role="dialog" aria-labelledby="menuTitle"><div class="handle"></div><h3 id="menuTitle"></h3><div id="menuBody"></div></div></div>
 <div id="wheel" hidden><div class="in" role="dialog" aria-label="Temporizador de descanso"><div class="handle"></div>
@@ -295,11 +305,52 @@ nav button b{font-size:19px}
   <button class="btn wide" data-a="wheelDone">Listo</button></div></div>
 <script src="ejercicios.js"></script>
 <script>
-const VERSION = 32; // súbelo junto con C en sw.js
+const VERSION = 34; // súbelo junto con C en sw.js
 const MUSCLES =['Pecho','Espalda','Hombros','Brazos','Piernas','Core'];
 const RESTS = Array.from({ length: 41 }, (_, i) => i * 15); // 0 a 10 min, de 15 en 15 s
 const RING = 119.38; // perímetro del anillo de descanso (2π·19)
 const TABS = ['inicio','entreno','perfil','ajustes'];
+// Iconos originales de FORJA: una sola familia SVG, trazo uniforme y sin glifos del sistema.
+const ICONS = {
+  add: '<path d="M12 5v14M5 12h14"/>',
+  target: '<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/><path d="M12 2v2m10 8h-2"/>',
+  arrow: '<path d="M5 12h14m-6-6 6 6-6 6"/>',
+  award: '<circle cx="12" cy="8" r="5"/><path d="m8.5 12-1 9 4.5-2.5 4.5 2.5-1-9"/>',
+  bell: '<path d="M18 9a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9m-8 12h4"/>',
+  calculator: '<rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 7h8M8 12h2m4 0h2M8 16h2m4 0h2"/>',
+  calendar: '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M7 3v4m10-4v4M3 10h18m-13 4h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01"/>',
+  camera: '<path d="M4 7h3l2-3h6l2 3h3a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2Z"/><circle cx="12" cy="13" r="3.5"/>',
+  check: '<path d="m5 12 4 4L19 6"/>',
+  chevron: '<path d="m9 18 6-6-6-6"/>',
+  cloud: '<path d="M7 18a4 4 0 1 1 .7-7.9A5.5 5.5 0 0 1 18 11h.5a3.5 3.5 0 1 1 0 7H7Z"/>',
+  copy: '<rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h3"/>',
+  edit: '<path d="m4 16.5-.8 4.3 4.3-.8L19 8.5 15.5 5 4 16.5Z"/><path d="m13.5 7 3.5 3.5"/>',
+  folder: '<path d="M3 6a2 2 0 0 1 2-2h5l2 2h7a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6Z"/><path d="M3 9h18"/>',
+  link: '<path d="M10 13.5 8.5 15a3.5 3.5 0 0 1-5-5l3-3a3.5 3.5 0 0 1 5 0m2.5 3.5 1.5-1.5a3.5 3.5 0 0 1 5 5l-3 3a3.5 3.5 0 0 1-5 0M9 15l6-6"/>',
+  list: '<path d="M9 6h11M9 12h11M9 18h11M4 6h.01M4 12h.01M4 18h.01"/>',
+  medal: '<circle cx="12" cy="8" r="5"/><path d="m8.5 12-1 9 4.5-2.5 4.5 2.5-1-9"/>',
+  note: '<path d="M14 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V10Z"/><path d="M14 3v7h7M7 14h10M7 18h7"/>',
+  redo: '<path d="M20 7v5h-5M4 17a8 8 0 0 0 13.7 2.3L20 16M4 7a8 8 0 0 1 13.7-2.3L20 8"/>',
+  ruler: '<path d="M4 7h16v10H4zM8 7v4m4-4v3m4-3v4m-8 3v3m4-3v2m4-2v3"/>',
+  share: '<path d="M12 15V3m-5 5 5-5 5 5"/><path d="M5 13v7h14v-7"/>',
+  scissors: '<circle cx="6" cy="6" r="2.5"/><circle cx="6" cy="18" r="2.5"/><path d="m8 8 12 12M8 16 20 4"/>',
+  star: '<path d="m12 3 2.7 5.5 6.1.9-4.4 4.3 1 6.1-5.4-2.9-5.4 2.9 1-6.1-4.4-4.3 6.1-.9L12 3Z"/>',
+  timer: '<circle cx="12" cy="13" r="8"/><path d="M12 9v4l3 2M9 2h6M12 5V3"/>',
+  trash: '<path d="M4 7h16M10 11v6m4-6v6M5 7l1 14h12l1-14M9 7V4h6v3"/>',
+  user: '<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>',
+  warm: '<path d="M12 22c4 0 7-2.8 7-6.5 0-2.4-1.4-4.5-3.4-6.1.2 2-1.2 3-2.5 3.5.3-4-1.6-7-4.7-9.9.4 3.7-1.1 5.5-2.6 7.5C4.5 10.2 5 12.3 5 15.5 5 19.2 8 22 12 22Z"/>',
+  weight: '<path d="M3 9v6m3-9v12m12-12v12m3-9v6M6 12h12"/><path d="M8 8v8m8-8v8"/>',
+  bars: '<path d="M4 19V9m5 10V5m6 14v-7m5 7V3"/>',
+  duplicate: '<rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h3"/>',
+  exercise: '<path d="M4 7v10m4-13v16m8-16v16m4-13v10M8 12h8"/>',
+  swap: '<path d="M16 3l4 4-4 4M4 7h16M8 21l-4-4 4-4m12 4H4"/>',
+  down: '<path d="M12 4v16m-7-7 7 7 7-7"/>',
+  up: '<path d="M12 20V4m-7 7 7-7 7 7"/>',
+  pause: '<path d="M8 5v14m8-14v14"/>',
+  restart: '<path d="M4 11a8 8 0 1 1 2 6m-2-6V5m0 6h6"/>',
+  x: '<path d="m6 6 12 12M18 6 6 18"/>'
+};
+const uiIcon = (name, cls = 'ui-icon') => `<svg class="${cls}" viewBox="0 0 24 24" aria-hidden="true">${ICONS[name] || ICONS.star}</svg>`;
 const SET_TYPES = ['', 'w', 'f', 'd']; // normal, calentamiento, fallo, drop set
 const work = sets => sets.filter(s => s.t !== 'w'); // las de calentamiento no cuentan para récords
 // Progresión doble: siempre entre 8 y 12 reps. Si en la última sesión todas las series de trabajo llegaron a 12,
@@ -312,11 +363,11 @@ function progression(exId) {
   const kg = Math.max(...last.map(s => +s.kg || 0)), top = last.filter(s => (+s.kg || 0) === kg);
   if (kg > 0 && top.every(s => s.reps >= REP_MAX)) {
     const next = kg + stepKg(exId);
-    return { up: true, kg: next, msg: `⬆️ Sube peso: ${fmt(next)} kg × ${REP_MIN} (la última vez hiciste ${REP_MAX} en todas)` };
+    return { up: true, kg: next, msg: `${uiIcon('up')} Sube peso: ${fmt(next)} kg × ${REP_MIN} (la última vez hiciste ${REP_MAX} en todas)` };
   }
-  return { up: false, kg, msg: last.every(s => s.reps >= REP_MIN)
-    ? `🎯 Mantén ${fmt(kg)} kg y suma 1 rep por serie (hasta ${REP_MAX})`
-    : `🎯 Mantén ${fmt(kg)} kg hasta hacer ${REP_MIN}–${REP_MAX} en todas` };
+  return { up: false, kg, msg: `${uiIcon('target')} ${last.every(s => s.reps >= REP_MIN)
+    ? `Mantén ${fmt(kg)} kg y suma 1 rep por serie (hasta ${REP_MAX})`
+    : `Mantén ${fmt(kg)} kg hasta hacer ${REP_MIN}–${REP_MAX} en todas`}` };
 }
 // Sugerencia para la serie j del ejercicio (null en calentamiento o sin historial).
 function suggest(it, j) {
@@ -430,7 +481,7 @@ function pEntreno() {
   const a = S.active;
   if (!a) {
     const rCard = r => `<div class="card routine-card">
-      <div class="routine-top"><span class="routine-icon" aria-hidden="true">✦</span><b class="tap routine-name" data-a="viewRoutine" data-id="${r.id}">${esc(r.name)}</b>
+      <div class="routine-top"><span class="routine-icon" aria-hidden="true">${uiIcon('weight')}</span><b class="tap routine-name" data-a="viewRoutine" data-id="${r.id}">${esc(r.name)}</b>
         <button class="icon dots" data-a="routineMenu" data-id="${r.id}" aria-label="Opciones de la rutina">⋮</button></div>
       <p class="routine-meta tap clamp" data-a="viewRoutine" data-id="${r.id}">${r.items.length} ejercicios · ${esc(r.items.slice(0, 3).map(it => ex(it.exId).name).join(' · '))}${r.items.length > 3 ? ' · …' : ''}</p>
       <button class="btn" data-a="startRoutine" data-id="${r.id}">Empezar rutina <span aria-hidden="true">→</span></button></div>`;
@@ -438,21 +489,21 @@ function pEntreno() {
     return ['Entrenamiento', `
       <section class="home-hero training-hero"><div class="hero-copy"><small class="home-kicker">TU PRÓXIMA SESIÓN</small><h2>Entrena a tu manera.</h2><p>Retoma una rutina o empieza desde cero.</p>
         <button class="btn" data-a="startEmpty">+ Entreno libre</button></div></section>
-      <div class="quick-actions"><button class="tile" data-a="newRoutine">＋<br>Nueva rutina</button><button class="tile" data-a="importStart">↥<br>Importar</button><button class="tile" data-a="newFolder">▤<br>Carpeta</button></div>
+      <div class="quick-actions"><button class="tile" data-a="newRoutine">${uiIcon('add')}<span>Nueva rutina</span></button><button class="tile" data-a="importStart">${uiIcon('down')}<span>Importar</span></button><button class="tile" data-a="newFolder">${uiIcon('folder')}<span>Carpeta</span></button></div>
       <div class="section-head"><h2>Mis rutinas</h2><small>${S.routines.length} en total</small></div>
       ${S.folders.map(f => { const rs = S.routines.filter(r => r.folder === f.id); return `<div class="folder">
         <div class="row between"><button class="fhead" data-a="folderToggle" data-id="${f.id}" aria-expanded="${!f.closed}">${f.closed ? '▸' : '▾'} ${esc(f.name)} <small>(${rs.length})</small></button>
           <button class="icon dots" data-a="folderMenu" data-id="${f.id}" aria-label="Opciones de la carpeta">⋮</button></div>
         ${f.closed ? '' : rs.map(rCard).join('') || '<p class="muted">Carpeta vacía. Mueve rutinas aquí desde su menú ⋮.</p>'}</div>`; }).join('')}
       ${loose.length ? (S.folders.length ? `<div class="fhead">Mis rutinas <small>(${loose.length})</small></div>` : '') + loose.map(rCard).join('') : ''}
-      ${S.routines.length ? '' : '<div class="home-empty"><span class="empty-mark" aria-hidden="true">✦</span><div><b>Aún no tienes rutinas</b><p>Crea una, impórtala o guarda como rutina un entreno terminado.</p></div></div>'}`];
+      ${S.routines.length ? '' : `<div class="home-empty"><span class="empty-mark" aria-hidden="true">${uiIcon('weight')}</span><div><b>Aún no tienes rutinas</b><p>Crea una, impórtala o guarda como rutina un entreno terminado.</p></div></div>`}`];
   }
   return ['Entreno en curso', `
     <div class="card">
       <input class="title-in" data-w="name" value="${esc(a.name)}" aria-label="Nombre del entreno">
       <div class="stats"><div><small>Duración</small><b id="elapsed"></b></div><div><small>Volumen</small><b id="vol">${fmtKg(vol(a))}</b></div><div><small>Series</small><b id="nsets">${fmt(nsets(a))}</b></div></div>
       <div class="row between" style="margin-top:10px"><small>Toca el nº de serie para cambiar su tipo. Desliza una serie a la izquierda para borrarla.</small>
-        <button class="btn ghost sm" data-a="openDiscos">🧮 Discos</button></div>
+        <button class="btn ghost sm" data-a="openDiscos">${uiIcon('calculator')} Discos</button></div>
     </div>
     ${a.items.map(exCard).join('')}
     <button class="btn ghost wide" data-a="pick" data-mode="workout">+ Añadir ejercicio</button>
@@ -463,16 +514,16 @@ function exCard(it, i) {
   const e = ex(it.exId), list = S.active.items;
   const note = S.notes[it.exId] || '', prog = progression(it.exId);
   return `<div class="card ${it.ss ? 'ss' : ''} ${fresh === 'ex:' + i ? 'fresh' : ''}">
-    ${it.ss ? `<small class="sslabel">🔗 Superserie ${ssLetter(list, i)}</small>` : ''}
+    ${it.ss ? `<small class="sslabel">${uiIcon('link')} Superserie ${ssLetter(list, i)}</small>` : ''}
     <div class="row between ex-head" data-drag="workout" data-i="${i}">
       <b class="exname" data-a="openEx" data-id="${it.exId}">${thumb(e)}${esc(e.name)}</b>
       <button class="icon dots" data-a="exMenu" data-i="${i}" aria-label="Opciones del ejercicio">⋮</button></div>
     <div class="row" style="flex-wrap:wrap;gap:8px;margin-top:4px">${restStepper('restStep', i, it.rest)}
-      <button class="restchip" data-a="noteOpen" data-id="${it.exId}">📝 Nota</button></div>
+      <button class="restchip" data-a="noteOpen" data-id="${it.exId}">${uiIcon('note')} Nota</button></div>
     ${prog ? `<p class="prog ${prog.up ? 'up' : ''}">${prog.msg}</p>` : ''}
-    ${note || noteOpen === it.exId ? `<div class="noterow ${fresh === 'note:' + it.exId ? 'fresh' : ''}"><span aria-hidden="true">🗒</span><input class="note" data-note="${it.exId}" id="note-${it.exId}" value="${esc(note)}" placeholder="Escribe una nota (asiento, agarre…)"></div>` : ''}
+    ${note || noteOpen === it.exId ? `<div class="noterow ${fresh === 'note:' + it.exId ? 'fresh' : ''}">${uiIcon('note')}<input class="note" data-note="${it.exId}" id="note-${it.exId}" value="${esc(note)}" placeholder="Escribe una nota (asiento, agarre…)"></div>` : ''}
     <div class="sh"><span>Serie</span><span>Anterior</span><span>kg</span><span>Reps</span><span>RPE</span><span>✓</span></div>
-    ${it.sets.map((s, j) => { const p = prev[j], sg = suggest(it, j); return `<div class="setwrap ${fresh === `set:${i}:${j}` ? 'fresh' : ''}"><div class="swbg" aria-hidden="true">🗑 Borrar</div><div class="set ${s.done ? 'done' : ''} ${fresh === `done:${i}:${j}` ? 'justdone' : ''}" data-si="${i}" data-sj="${j}">
+    ${it.sets.map((s, j) => { const p = prev[j], sg = suggest(it, j); return `<div class="setwrap ${fresh === `set:${i}:${j}` ? 'fresh' : ''}"><div class="swbg" aria-hidden="true">${uiIcon('trash')} Borrar</div><div class="set ${s.done ? 'done' : ''} ${fresh === `done:${i}:${j}` ? 'justdone' : ''}" data-si="${i}" data-sj="${j}">
       <button class="n t-${s.t || ''}" data-a="setMenu" data-i="${i}" data-j="${j}" aria-label="Opciones de la serie">${setLabel(it.sets, j)}</button>
       <button class="prev" data-a="usePrev" data-i="${i}" data-j="${j}" ${p ? '' : 'disabled'}>${p ? `${fmt(p.kg)}×${p.reps}` : '—'}</button>
       <input inputmode="decimal" data-i="${i}" data-j="${j}" data-f="kg" value="${s.kg === '' ? '' : fmt(s.kg)}" placeholder="${sg ? fmt(sg.kg) : p ? fmt(p.kg) : ''}" aria-label="kg">
@@ -486,7 +537,7 @@ function exCard(it, i) {
 const thumb = e => e.img ? `<img class="thumb" src="img/${e.id}-0.jpg" alt="" decoding="sync">` : `<span class="thumb ph">${esc((e.name || '?')[0])}</span>`;
 const restTxt = s => !s ? 'sin descanso' : s < 60 ? `${s} s` : `${Math.floor(s / 60)} min${s % 60 ? ` ${s % 60} s` : ''}`;
 // mode: 'restStep' = ejercicio del entreno en curso, 'rtRest' = ejercicio del editor de rutinas
-const restStepper = (mode, i, v) => `<button class="restchip" data-a="restPick" data-m="${mode}" data-i="${i}">⏱ Descanso: <b>${v ? restTxt(v) : 'sin descanso'}</b></button>`;
+const restStepper = (mode, i, v) => `<button class="restchip" data-a="restPick" data-m="${mode}" data-i="${i}">${uiIcon('timer')} Descanso: <b>${v ? restTxt(v) : 'sin descanso'}</b></button>`;
 // Cada serie cuenta 1 para los músculos principales y 0,5 para los secundarios.
 function muscleShare(items) {
   const t = {};
@@ -521,7 +572,7 @@ function pRutinaVer() {
     <div class="card stats"><div><small>Ejercicios</small><b>${r.items.length}</b></div><div><small>Series totales</small><b>${sets}</b></div><div><small>Duración aprox.</small><b>${fdur(secs * 1000)}</b></div></div>
     <button class="btn big" data-a="startRoutine" data-id="${r.id}">Empezar rutina</button>
     <div class="card">${r.items.map((it, i) => { const e = ex(it.exId); return `<button class="li ${it.ss ? 'ssli' : ''}" data-a="openEx" data-id="${e.id}">${thumb(e)}
-      <span><b>${esc(e.name)}</b><br><small>${it.ss ? `🔗 Superserie ${ssLetter(r.items, i)} · ` : ''}${it.sets} series${it.reps ? ` · ${esc(it.reps)} reps` : ''} · ⏱ ${restTxt(it.rest ?? S.rest)}</small></span></button>`; }).join('')}</div>
+      <span><b>${esc(e.name)}</b><br><small>${it.ss ? `Superserie ${ssLetter(r.items, i)} · ` : ''}${it.sets} series${it.reps ? ` · ${esc(it.reps)} reps` : ''} · ${uiIcon('timer')} ${restTxt(it.rest ?? S.rest)}</small></span></button>`; }).join('')}</div>
     ${muscleBars(r.items.map(it => ({ exId: it.exId, n: it.sets })))}
     <button class="btn ghost wide" data-a="editRoutine" data-id="${r.id}">Editar rutina</button>`];
 }
@@ -577,13 +628,13 @@ function parseRoutine(text) {
 let imp = null;
 function pImportar() {
   if (!imp) return ['Importar rutina', `
-    <div class="card"><h3>📷 Desde capturas de pantalla</h3><ol class="how">
+    <div class="card"><h3>${uiIcon('camera')} Desde capturas de pantalla</h3><ol class="how">
       <li>Abre el enlace de la rutina (Hevy u otra app) y haz captura de pantalla. Si es larga, haz varias.</li>
       <li>Pulsa el botón y elige las capturas, en orden.</li></ol>
       <button class="btn wide" data-a="importImgPick">Elegir capturas</button>
       <input type="file" id="impImg" accept="image/*" multiple hidden>
       <p class="muted" id="ocrMsg">El texto se lee en tu móvil; las imágenes no se envían a ningún sitio.</p></div>
-    <div class="card"><h3>📋 Pegando texto</h3>
+    <div class="card"><h3>${uiIcon('copy')} Pegando texto</h3>
       <p class="muted">Si puedes copiar el texto de la rutina, pégalo aquí. También vale una lista escrita a mano, una línea por ejercicio: "Press banca 4x8-10".</p>
       <textarea class="field" id="impText" rows="8" placeholder="Pega aquí el texto…"></textarea>
       <div id="impLink"></div>
@@ -598,7 +649,7 @@ function pImportar() {
         <select class="field" style="margin:0" data-imp="${i}">
           <option value="new" ${r.pick === 'new' ? 'selected' : ''}>➕ Crear «${esc(r.src)}» como ejercicio propio</option>
           ${opts.map(e => `<option value="${e.id}" ${e.id === r.pick ? 'selected' : ''}>${esc(e.name)}</option>`).join('')}</select></div>
-      <small>${r.sets} series${r.reps ? ` · ${esc(r.reps)} reps` : ''} · ⏱ ${restTxt(r.rest)}</small></div>`).join('')}
+      <small>${r.sets} series${r.reps ? ` · ${esc(r.reps)} reps` : ''} · ${uiIcon('timer')} ${restTxt(r.rest)}</small></div>`).join('')}
     <button class="btn wide" data-a="importSave">Guardar rutina</button>
     <button class="btn ghost wide" data-a="importStart">Empezar de nuevo</button>`];
 }
@@ -607,7 +658,7 @@ function pRutina() {
     <input class="field" data-d="name" value="${esc(draft.name)}" placeholder="Nombre (ej. Pierna, Empuje…)">
     ${draft.items.length > 1 ? '<p class="muted">Mantén pulsado un ejercicio para cambiar el orden.</p>' : ''}
     ${draft.items.map((it, i) => `<div class="card ${it.ss ? 'ss' : ''}">
-      ${it.ss ? `<small class="sslabel">🔗 Superserie ${ssLetter(draft.items, i)}</small>` : ''}
+      ${it.ss ? `<small class="sslabel">${uiIcon('link')} Superserie ${ssLetter(draft.items, i)}</small>` : ''}
       <div class="row between ex-head" data-drag="routine" data-i="${i}">
         <b class="exname" style="color:var(--txt)"><span class="grip" aria-hidden="true">⠿</span>${thumb(ex(it.exId))}${esc(ex(it.exId).name)}</b>
         <button class="icon" data-a="rtRm" data-i="${i}" aria-label="Quitar">✕</button></div>
@@ -616,7 +667,7 @@ function pRutina() {
         <label class="cnt"><small>Reps</small><input class="field" style="width:80px;margin:0" data-rr="${i}" value="${esc(it.reps || '')}" placeholder="10-12"></label>
       </div>
       ${restStepper('rtRest', i, it.rest ?? S.rest)}
-      ${draft.items[i + 1] ? `<button class="btn ghost sm" style="margin-top:8px" data-a="ssLinkR" data-i="${i}">${it.ss && it.ss === draft.items[i + 1].ss ? '✂ Separar del siguiente' : '🔗 Superserie con el siguiente'}</button>` : ''}</div>`).join('')}
+      ${draft.items[i + 1] ? `<button class="btn ghost sm" style="margin-top:8px" data-a="ssLinkR" data-i="${i}">${it.ss && it.ss === draft.items[i + 1].ss ? `${uiIcon('scissors')} Separar del siguiente` : `${uiIcon('link')} Superserie con el siguiente`}</button>` : ''}</div>`).join('')}
     <button class="btn ghost wide" data-a="pick" data-mode="routine">+ Añadir ejercicio</button>
     <button class="btn wide" data-a="saveRoutine">Guardar rutina</button>
     ${draft.id ? '<button class="btn danger wide" data-a="delRoutine">Eliminar rutina</button>' : ''}
@@ -639,7 +690,7 @@ function prCounts() {
 const feedCard = (w, prs) => `<div class="card tap" data-a="openW" data-id="${w.id}">
   <div class="row between"><b>${esc(w.name)}</b><small>${fdate(w.start)}</small></div>
   <div class="stats" style="margin:8px 0"><div><small>Tiempo</small><b>${fdur(w.end - w.start)}</b></div><div><small>Volumen</small><b>${fmtKg(vol(w))}</b></div>
-    <div><small>Récords</small><b>${prs ? `🏅 ${prs}` : '—'}</b></div></div>
+    <div><small>Récords</small><b>${prs || '—'}</b></div></div>
   <div class="exrows">${w.items.slice(0, 3).map(it => `<div class="row">${thumb(ex(it.exId))}<span>${it.sets.length} series · ${esc(ex(it.exId).name)}</span></div>`).join('')}
   ${w.items.length > 3 ? `<small>Ver ${w.items.length - 3} ejercicio${w.items.length - 3 > 1 ? 's' : ''} más</small>` : ''}</div></div>`;
 function pInicio() {
@@ -650,24 +701,24 @@ function pInicio() {
     <div class="card stats home-stats"><div><small>Entrenos · últimos 7 días</small><b>${week.length}</b></div><div><small>Volumen · últimos 7 días</small><b>${fmtKg(week.reduce((t, w) => t + vol(w), 0))}</b></div></div>
     <div class="section-head"><h2>Actividad reciente</h2>${S.workouts.length ? `<small>${S.workouts.length} sesiones</small>` : ''}</div>
     ${S.workouts.map(w => feedCard(w, prs[w.id])).join('')
-      || '<div class="home-empty"><span class="empty-mark" aria-hidden="true">↗</span><div><b>Tu historial empieza aquí</b><p>Cuando termines un entreno, lo verás aparecer en esta lista.</p></div></div>'}`];
+      || `<div class="home-empty"><span class="empty-mark" aria-hidden="true">${uiIcon('arrow')}</span><div><b>Tu historial empieza aquí</b><p>Cuando termines un entreno, lo verás aparecer en esta lista.</p></div></div>`}`];
 }
 let pMetric = 'dur';
 function pPerfil() {
   const p = S.profile, prs = prCounts(), total = Object.values(prs).reduce((a, b) => a + b, 0);
   return [p.name || 'Perfil', `
     <div class="card row" style="gap:16px">
-      <button class="avatar" data-a="photoPick" aria-label="Cambiar foto de perfil">${p.photo ? `<img src="${p.photo}" alt="">` : '👤'}</button>
+      <button class="avatar" data-a="photoPick" aria-label="Cambiar foto de perfil">${p.photo ? `<img src="${p.photo}" alt="">` : uiIcon('user')}</button>
       <input type="file" id="photoFile" accept="image/*" hidden>
       <div style="flex:1;min-width:0"><div class="row between"><b style="font-size:20px">${esc(p.name || 'Tu nombre')}</b>
-        <button class="icon" data-a="nameEdit" aria-label="Cambiar nombre">✎</button></div>
+        <button class="icon" data-a="nameEdit" aria-label="Cambiar nombre">${uiIcon('edit')}</button></div>
         <div class="stats" style="margin-top:6px"><div><small>Entrenos</small><b>${S.workouts.length}</b></div><div><small>Récords</small><b>${total}</b></div></div></div></div>
-    ${acct ? `<p class="muted">☁️ Guardado en tu cuenta de Google (${esc(acct.email)})</p>` : `<div class="card"><h3>☁️ Guarda tu cuenta</h3>
+    ${acct ? `<p class="muted">${uiIcon('cloud')} Guardado en tu cuenta de Google (${esc(acct.email)})</p>` : `<div class="card"><h3>${uiIcon('cloud')} Guarda tu cuenta</h3>
       <p class="muted">Inicia sesión para guardar tus entrenos en la nube y recuperarlos si cambias de móvil.</p><div id="gbtn"></div></div>`}
     ${weeklyChart(pMetric, true)}
     <h2>Información</h2>
-    <div class="tiles"><button class="tile" data-a="goSub" data-p="stats">📈 Estadísticas</button><button class="tile" data-a="goSub" data-p="ejercicios">🏋 Ejercicios</button>
-      <button class="tile" data-a="goSub" data-p="cuerpo">⚖️ Medidas</button><button class="tile" data-a="goSub" data-p="calendario">📅 Calendario</button></div>
+    <div class="tiles"><button class="tile" data-a="goSub" data-p="stats">${uiIcon('bars')} Estadísticas</button><button class="tile" data-a="goSub" data-p="ejercicios">${uiIcon('exercise')} Ejercicios</button>
+      <button class="tile" data-a="goSub" data-p="cuerpo">${uiIcon('ruler')} Medidas</button><button class="tile" data-a="goSub" data-p="calendario">${uiIcon('calendar')} Calendario</button></div>
     <h2>Entrenamientos</h2>
     ${S.workouts.slice(0, 3).map(w => feedCard(w, prs[w.id])).join('') || '<p class="muted">Aún no hay entrenos.</p>'}
     ${S.workouts.length > 3 ? '<button class="btn ghost wide" data-tab="inicio">Ver todos</button>' : ''}`];
@@ -712,13 +763,13 @@ function summary(w) {
   return { rows, same, prs: rows.filter(r => r.pr), ups: rows.filter(r => r.up) };
 }
 // Peso aproximado de cada cosa, de mayor a menor: se elige la mayor que cabe en el volumen del entreno.
-const COMPARE = [[150000, '🐋', 'una ballena azul', 'ballenas azules'], [36000, '🚛', 'un tráiler', 'tráileres'], [12000, '🚌', 'un autobús', 'autobuses'],
-  [8000, '🦖', 'un tiranosaurio', 'tiranosaurios'], [5000, '🐘', 'un elefante', 'elefantes'], [2500, '🚐', 'una furgoneta', 'furgonetas'],
-  [1300, '🚗', 'un coche', 'coches'], [700, '🐄', 'una vaca', 'vacas'], [400, '🐻', 'un oso', 'osos'], [200, '🏍️', 'una moto', 'motos'],
-  [40, '🐕', 'un perro grande', 'perros grandes'], [0, '🏋️', 'unas pesas', 'pesas']];
+const COMPARE = [[150000, 'una ballena azul', 'ballenas azules'], [36000, 'un tráiler', 'tráileres'], [12000, 'un autobús', 'autobuses'],
+  [8000, 'un tiranosaurio', 'tiranosaurios'], [5000, 'un elefante', 'elefantes'], [2500, 'una furgoneta', 'furgonetas'],
+  [1300, 'un coche', 'coches'], [700, 'una vaca', 'vacas'], [400, 'un oso', 'osos'], [200, 'una moto', 'motos'],
+  [40, 'un perro grande', 'perros grandes'], [0, 'unas pesas', 'pesas']];
 function compare(kg) {
-  const [k, emoji, one, many] = COMPARE.find(([k]) => kg >= k), n = k ? Math.floor(kg / k) : 1;
-  return { emoji, n, text: n >= 2 ? `¡Como levantar ${n} ${many}!` : `¡Como levantar ${one}!` };
+  const [k, one, many] = COMPARE.find(([k]) => kg >= k), n = k ? Math.floor(kg / k) : 1;
+  return { n, text: n >= 2 ? `Equivale al peso de ${n} ${many}` : `Equivale al peso de ${one}` };
 }
 const pct = (a, b) => b ? Math.round((a - b) / b * 100) : 0;
 const arrow = d => d == null ? '' : d > .05 ? '<b class="upc">↑</b>' : d < -.05 ? '<b class="downc">↓</b>' : '<b class="mut">=</b>';
@@ -727,25 +778,25 @@ function pResumen() {
   if (!w) { V = { p: 'inicio', tab: 'inicio' }; return pInicio(); }
   const { rows, same, prs, ups } = summary(w), dur = w.end - w.start;
   return ['Resumen', `
-    <div class="card hero"><div style="font-size:40px">💪</div><h2 style="margin:4px 0">¡Entreno completado!</h2>
+    <div class="card hero"><div class="completion-mark">${uiIcon('weight')}</div><h2 style="margin:4px 0">¡Entreno completado!</h2>
       <b>${esc(w.name)}</b><br><small>${new Date(w.start).toLocaleString('es', { dateStyle: 'full', timeStyle: 'short' })}</small></div>
     <div class="card stats"><div><small>Duración</small><b>${fdur(dur)}</b></div><div><small>Volumen</small><b>${fmtKg(vol(w))}</b></div>
-      <div><small>Series</small><b>${fmt(nsets(w))}</b></div><div><small>Récords</small><b>${prs.length ? '🏅 ' + prs.length : '—'}</b></div></div>
+      <div><small>Series</small><b>${fmt(nsets(w))}</b></div><div><small>Récords</small><b>${prs.length || '—'}</b></div></div>
     ${(c => `<div class="card hero"><small>Hoy has levantado</small><div class="bigkg">${fmtKg(vol(w))}</div>
-      <div class="cmpemoji" aria-hidden="true">${c.emoji.repeat(Math.min(3, c.n))}</div><b>${c.text}</b>
-      <button class="btn ghost wide" data-a="shareResumen" data-id="${w.id}" data-k="cmp">📤 Compartir esta imagen</button></div>`)(compare(vol(w)))}
+      <div class="cmpemoji" aria-hidden="true">×${c.n.toLocaleString('es')}</div><b>${c.text}</b>
+      <button class="btn ghost wide" data-a="shareResumen" data-id="${w.id}" data-k="cmp">${uiIcon('share')} Compartir esta imagen</button></div>`)(compare(vol(w)))}
     ${same ? `<div class="card"><h3>Comparado con la última vez</h3><small>${fdate(same.start)}</small>
       <div class="stats" style="margin-top:8px"><div><small>Volumen</small><b>${arrow(pct(vol(w), vol(same)) / 100)} ${pct(vol(w), vol(same)) > 0 ? '+' : ''}${pct(vol(w), vol(same))} %</b></div>
       <div><small>Duración</small><b>${fdur(Math.abs(dur - (same.end - same.start)))} ${dur >= same.end - same.start ? 'más' : 'menos'}</b></div></div></div>` : ''}
-    ${prs.length ? `<div class="card"><h3>🏅 Récords de hoy</h3>${prs.map(r => `<div class="row" style="margin-top:8px">${thumb(ex(r.it.exId))}
+    ${prs.length ? `<div class="card"><h3>${uiIcon('award')} Récords de hoy</h3>${prs.map(r => `<div class="row" style="margin-top:8px">${thumb(ex(r.it.exId))}
       <span style="flex:1">${esc(ex(r.it.exId).name)}<br><small>${fmt(r.top.kg)} kg × ${r.top.reps} · 1RM ~${fmt(e1rm(r.top))} kg (+${fmt(r.gain)})</small></span></div>`).join('')}</div>` : ''}
-    ${ups.length ? `<div class="card prog up"><h3>⬆️ La próxima vez, sube peso</h3>${ups.map(r => `<p style="margin:6px 0">${esc(ex(r.it.exId).name)}: <b>${fmt(r.next)} kg × ${REP_MIN}</b></p>`).join('')}
+    ${ups.length ? `<div class="card prog up"><h3>${uiIcon('up')} La próxima vez, sube peso</h3>${ups.map(r => `<p style="margin:6px 0">${esc(ex(r.it.exId).name)}: <b>${fmt(r.next)} kg × ${REP_MIN}</b></p>`).join('')}
       <small>Hiciste ${REP_MAX} reps en todas las series.</small></div>` : ''}
     <div class="card"><h3>Ejercicios</h3>${rows.map(r => `<div class="row" style="margin-top:8px">${thumb(ex(r.it.exId))}
       <span style="flex:1">${esc(ex(r.it.exId).name)}<br><small>${work(r.it.sets).length} series${r.top ? ` · mejor ${fmt(r.top.kg)} × ${r.top.reps}` : ''}</small></span>${arrow(r.diff)}</div>`).join('')}
       <small style="display:block;margin-top:8px">↑ ↓ = comparado con la última vez que hiciste cada ejercicio</small></div>
     ${muscleBars(w.items.map(it => ({ exId: it.exId, n: work(it.sets).length })))}
-    <button class="btn wide" data-a="shareResumen" data-id="${w.id}">📤 Compartir el resumen</button>
+    <button class="btn wide" data-a="shareResumen" data-id="${w.id}">${uiIcon('share')} Compartir el resumen</button>
     <button class="btn ghost wide" data-a="openW" data-id="${w.id}">Ver detalle de las series</button>
     <button class="btn ghost wide" data-tab="inicio">Listo</button>`];
 }
@@ -759,13 +810,12 @@ async function shareResumen(id, kind = 'resumen') {
   g.fillStyle = '#B79AFF'; [[80, 92, 18, 60], [182, 92, 18, 60], [101, 104, 12, 36], [167, 104, 12, 36], [113, 116, 54, 12]].forEach(([x, y, ww, h]) => g.fillRect(x, y, ww, h));
   g.font = `800 52px ${F}`; g.fillText('FORJA', 230, 140);
   if (kind === 'cmp') { // "Hoy has levantado X kg · ¡Como levantar N elefantes!"
-    const cm = compare(vol(w)), E = '"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif';
+    const cm = compare(vol(w));
     g.textAlign = 'center';
     g.fillStyle = '#9695B2'; g.font = `500 44px ${F}`; g.fillText('Hoy has levantado', 540, 330);
     g.fillStyle = '#F0EFFF'; g.font = `900 150px ${F}`; g.fillText(fmtKg(vol(w)), 540, 490);
-    const n = Math.min(3, cm.n), size = n === 1 ? 300 : n === 2 ? 240 : 190;
-    g.font = `${size}px ${E}`; g.fillText(cm.emoji.repeat(n), 540, 860);
-    g.fillStyle = '#B79AFF'; g.font = `800 58px ${F}`; g.fillText(fit(cm.text, 960), 540, 1010);
+    g.fillStyle = '#B79AFF'; g.font = `800 84px ${F}`; g.fillText(`×${cm.n.toLocaleString('es')}`, 540, 790);
+    g.fillStyle = '#B79AFF'; g.font = `800 58px ${F}`; g.fillText(fit(cm.text, 960), 540, 930);
     g.fillStyle = '#9695B2'; g.font = `400 34px ${F}`; g.fillText(fit(`${w.name} · ${new Date(w.start).toLocaleDateString('es', { day: 'numeric', month: 'long' })}`, 960), 540, 1080);
     g.textAlign = 'left';
     if (S.profile.name) { g.fillStyle = '#9695B2'; g.font = `500 34px ${F}`; g.textAlign = 'right'; g.fillText(fit(S.profile.name, 500), 1000, 1280); g.textAlign = 'left'; }
@@ -773,7 +823,7 @@ async function shareResumen(id, kind = 'resumen') {
   } else {
     g.fillStyle = '#F0EFFF'; g.font = `800 64px ${F}`; g.fillText(fit(w.name, 920), 80, 260);
     g.fillStyle = '#9695B2'; g.font = `400 34px ${F}`; g.fillText(new Date(w.start).toLocaleDateString('es', { weekday: 'long', day: 'numeric', month: 'long' }), 80, 315);
-    [['Duración', fdur(w.end - w.start)], ['Volumen', fmtKg(vol(w))], ['Series', fmt(nsets(w))], ['Récords', prs.length ? '🏅 ' + prs.length : '—']].forEach(([l, v], i) => {
+    [['Duración', fdur(w.end - w.start)], ['Volumen', fmtKg(vol(w))], ['Series', fmt(nsets(w))], ['Récords', prs.length ? String(prs.length) : '—']].forEach(([l, v], i) => {
       const x = 80 + i * 235; g.fillStyle = '#19192A'; g.fillRect(x, 370, 215, 150);
       g.fillStyle = '#9695B2'; g.font = `400 28px ${F}`; g.fillText(l, x + 22, 418); g.fillStyle = '#F0EFFF'; g.font = `800 40px ${F}`; g.fillText(fit(v, 180), x + 22, 480);
     });
@@ -789,8 +839,8 @@ async function shareResumen(id, kind = 'resumen') {
       y += 30;
     };
     const best = r => r.top ? `${fmt(r.top.kg)} kg × ${r.top.reps}` : `${work(r.it.sets).length} series`;
-    section('🏅 Récords de hoy', prs, best);
-    section('⬆️ Próxima vez, sube a', rows.filter(r => r.up), r => `${fmt(r.next)} kg × ${REP_MIN}`);
+    section('Récords de hoy', prs, best);
+    section('Próxima vez, sube a', rows.filter(r => r.up), r => `${fmt(r.next)} kg × ${REP_MIN}`);
     section(prs.length ? 'Resto de ejercicios' : 'Ejercicios', rows.filter(r => !r.pr), best);
     g.fillStyle = '#9695B2'; g.font = `400 28px ${F}`; g.fillText('Entrenado con Forja', 80, 1280);
   }
@@ -806,11 +856,11 @@ function pWorkout() {
   return [w.name, `
     <div class="card"><small>${new Date(w.start).toLocaleString('es', { dateStyle: 'full', timeStyle: 'short' })}</small>
       <div class="stats" style="margin-top:8px"><div><small>Duración</small><b>${fdur(w.end - w.start)}</b></div><div><small>Volumen</small><b>${fmtKg(vol(w))}</b></div><div><small>Series</small><b>${fmt(nsets(w))}</b></div></div></div>
-    ${w.items.map((it, i) => `<div class="card ${it.ss ? 'ss' : ''}">${it.ss ? `<small class="sslabel">🔗 Superserie ${ssLetter(w.items, i)}</small>` : ''}
+    ${w.items.map((it, i) => `<div class="card ${it.ss ? 'ss' : ''}">${it.ss ? `<small class="sslabel">${uiIcon('link')} Superserie ${ssLetter(w.items, i)}</small>` : ''}
       <b class="exname" data-a="openEx" data-id="${it.exId}" style="display:flex;align-items:center;gap:10px">${thumb(ex(it.exId))}${esc(ex(it.exId).name)}</b>
       <table>${it.sets.map((s, j) => `<tr><td class="t-${s.t || ''}">${setLabel(it.sets, j)}</td><td>${fmt(s.kg)} kg × ${s.reps}${s.rpe ? ` <small>RPE ${fmt(s.rpe)}</small>` : ''}</td><td>${s.t === 'w' ? 'calentamiento' : `1RM ~${fmt(e1rm(s))}`}</td></tr>`).join('')}</table></div>`).join('')}
     ${muscleBars(w.items.map(it => ({ exId: it.exId, n: it.sets.length })))}
-    <button class="btn ghost wide" data-a="openResumen" data-id="${w.id}">📊 Ver resumen</button>
+    <button class="btn ghost wide" data-a="openResumen" data-id="${w.id}">${uiIcon('bars')} Ver resumen</button>
     <button class="btn wide" data-a="repeatW" data-id="${w.id}">Repetir este entreno</button>
     <button class="btn ghost wide" data-a="asRoutine" data-id="${w.id}">Guardar como rutina</button>
     <button class="btn danger wide" data-a="delW" data-id="${w.id}">Eliminar</button>`];
@@ -840,10 +890,10 @@ function pEjercicio() {
   const heavy = best(s => s.kg), top = best(e1rm), bigVol = best(s => s.kg * s.reps);
   const custom = S.custom.some(c => c.id === e.id);
   return [e.name, `
-    <input class="note" data-note="${e.id}" value="${esc(S.notes[e.id] || '')}" placeholder="📝 Tu nota para este ejercicio (asiento, agarre…)">
+    <input class="note" data-note="${e.id}" value="${esc(S.notes[e.id] || '')}" placeholder="Tu nota para este ejercicio (asiento, agarre…)">
     ${e.img ? `<div class="demo"><img src="img/${e.id}-0.jpg" alt=""><img src="img/${e.id}-1.jpg" alt="Demostración de ${esc(e.name)}"></div>` : ''}
     ${e.how ? `<div class="card"><h3>Qué trabaja</h3><div class="tags">${e.main.map(m => `<span class="tag main">${esc(m)}</span>`).join('')}${e.sec.map(m => `<span class="tag">${esc(m)}</span>`).join('')}</div></div>
-    <div class="card"><h3>Cómo se hace</h3><ol class="how">${e.how.map(s => `<li>${esc(s)}</li>`).join('')}</ol><p class="tip">💡 ${esc(e.tip)}</p></div>` : ''}
+    <div class="card"><h3>Cómo se hace</h3><ol class="how">${e.how.map(s => `<li>${esc(s)}</li>`).join('')}</ol><p class="tip">${esc(e.tip)}</p></div>` : ''}
     ${all.length ? `<h2>Tus marcas</h2><div class="card stats">
       <div><small>Peso máx.</small><b>${fmt(heavy.kg)} kg</b><small>× ${heavy.reps}</small></div>
       <div><small>1RM estimado</small><b>${fmt(e1rm(top))} kg</b></div>
@@ -874,16 +924,16 @@ function pAjustes() {
     <div class="card"><b>Importar historial de Hevy</b>
       <p class="muted">En Hevy, exporta tus entrenamientos desde sus ajustes (te da un archivo .csv) y elígelo aquí. Se añaden a tu historial sin borrar nada, con tus marcas y gráficas.</p>
       <button class="btn wide" data-a="hevyCsvPick">Elegir archivo .csv</button><input type="file" id="hevyCsv" accept=".csv,text/csv,text/comma-separated-values" hidden></div>
-    <div class="card"><b>Herramientas</b><button class="btn ghost wide" data-a="openDiscos">🧮 Calculadora de discos</button></div>
+    <div class="card"><b>Herramientas</b><button class="btn ghost wide" data-a="openDiscos">${uiIcon('calculator')} Calculadora de discos</button></div>
     <p class="muted">${S.workouts.length} entrenos · ${S.routines.length} rutinas · ${S.custom.length} ejercicios propios</p>
     <div class="card"><b>Aviso de fin de descanso</b>
       <p class="muted">Suenan unas campanas de ring y llega una notificación de Forja. ${!window.Notification ? 'Este navegador no admite notificaciones; en iPhone, abre Forja desde el icono de la pantalla de inicio.'
-        : Notification.permission === 'granted' ? '✅ Notificaciones activadas.' : Notification.permission === 'denied' ? '🚫 Las notificaciones están bloqueadas: actívalas en Ajustes del móvil → Notificaciones → Forja.' : ''}</p>
+        : Notification.permission === 'granted' ? 'Notificaciones activadas.' : Notification.permission === 'denied' ? 'Las notificaciones están bloqueadas: actívalas en Ajustes del móvil → Notificaciones → Forja.' : ''}</p>
       ${window.Notification && Notification.permission === 'default' ? '<button class="btn wide" data-a="notifAsk">Activar notificaciones</button>' : ''}
-      <button class="btn ghost wide" data-a="bellTest">🔔 Probar campanas</button></div>
+      <button class="btn ghost wide" data-a="bellTest">${uiIcon('bell')} Probar notificación</button></div>
     <div class="card"><b>Cuenta</b>${acct ? `<p class="muted">Conectado como <b>${esc(acct.email)}</b>.
         ${acct.synced ? `Última sincronización: ${new Date(acct.synced).toLocaleString('es', { dateStyle: 'short', timeStyle: 'short' })}.` : ''}</p>
-      <button class="btn ghost wide" data-a="syncNow">☁️ Sincronizar ahora</button><button class="btn danger wide" data-a="logout">Cerrar sesión</button>`
+      <button class="btn ghost wide" data-a="syncNow">${uiIcon('cloud')} Sincronizar ahora</button><button class="btn danger wide" data-a="logout">Cerrar sesión</button>`
       : `<p class="muted">Inicia sesión con Google para guardar tus datos en la nube.</p><div id="gbtn"></div>`}</div>
     <p class="muted">Forja versión ${VERSION}</p>`];
 }
@@ -1127,7 +1177,7 @@ async function notifyRest() {
   if (pushed) { pushed = false; return; } // ya llega el del servidor; así no salen dos
   if (!('Notification' in window) || Notification.permission !== 'granted') return;
   const reg = await navigator.serviceWorker?.getRegistration();
-  reg?.showNotification('Forja', { body: '¡Descanso terminado! Vuelve a tu entrenamiento 💪', icon: 'icon-192.png', badge: 'icon-192.png',
+  reg?.showNotification('Forja', { body: '¡Descanso terminado! Vuelve a tu entrenamiento.', icon: 'icon-192.png', badge: 'icon-192.png',
     tag: 'descanso', renotify: true, vibrate: [200, 100, 200, 100, 200] });
 }
 function alarm() {
@@ -1212,7 +1262,9 @@ $('#menu').addEventListener('click', e => {
   const b = e.target.closest('[data-mi]'); if (!b) return;
   menu.run = () => MENU[b.dataset.mi](b.dataset); history.back();
 });
-const mItem = (icon, label, mi, attrs = '', cls = '') => `<button class="mi ${cls}" data-mi="${mi}" ${attrs}><span aria-hidden="true">${icon}</span>${label}</button>`;
+const mItem = (icon, label, mi, attrs = '', cls = '') => {
+  return `<button class="mi ${cls}" data-mi="${mi}" ${attrs}><span aria-hidden="true">${uiIcon(icon)}</span>${label}</button>`;
+};
 const reorderHtml = () => S.active.items.map((it, k, l) => `<div class="mi"><span>${k + 1}</span><b style="flex:1;font-weight:500">${esc(ex(it.exId).name)}</b>
   <button class="icon" data-a="moveEx" data-i="${k}" data-d="-1" ${k ? '' : 'disabled'} aria-label="Subir">↑</button><button class="icon" data-a="moveEx" data-i="${k}" data-d="1" ${k < l.length - 1 ? '' : 'disabled'} aria-label="Bajar">↓</button></div>`).join('')
   + `<button class="btn wide" data-mi="done">Listo</button>`;
@@ -1243,19 +1295,19 @@ const MENU = {
   rpe: d => { const s = S.active.items[d.i].sets[d.j]; if (d.v) s.rpe = +d.v; else delete s.rpe; save(); smooth(render); },
   save: () => A.finish(),
   rEdit: d => A.editRoutine(d),
-  syncNow: async () => { toast('Sincronizando…'); await sync(); render(); toast(acct ? '✅ Sincronizado' : 'Vuelve a iniciar sesión'); },
+  syncNow: async () => { toast('Sincronizando…'); await sync(); render(); toast(acct ? 'Sincronizado' : 'Vuelve a iniciar sesión'); },
   logout: () => { acct = null; saveAcct(); window.google?.accounts.id.disableAutoSelect(); render(); toast('Sesión cerrada; tus datos siguen en este móvil'); },
   rDup: d => { const r = S.routines.find(x => x.id === d.id); S.routines.push({ ...structuredClone(r), id: uid(), name: r.name + ' (copia)', u: Date.now() }); save(); render(); toast('Rutina duplicada'); },
-  rMove: d => openMenu('Mover a carpeta', S.folders.map(f => mItem('📁', esc(f.name), 'rMoveTo', `data-id="${d.id}" data-f="${f.id}"`)).join('')
-    + mItem('📋', 'Sin carpeta', 'rMoveTo', `data-id="${d.id}" data-f=""`) + mItem('➕', 'Nueva carpeta…', 'rMoveNew', `data-id="${d.id}"`)),
+  rMove: d => openMenu('Mover a carpeta', S.folders.map(f => mItem('folder', esc(f.name), 'rMoveTo', `data-id="${d.id}" data-f="${f.id}"`)).join('')
+    + mItem('copy', 'Sin carpeta', 'rMoveTo', `data-id="${d.id}" data-f=""`) + mItem('add', 'Nueva carpeta…', 'rMoveNew', `data-id="${d.id}"`)),
   rMoveTo: d => { const r = S.routines.find(x => x.id === d.id); if (d.f) r.folder = d.f; else delete r.folder; r.u = Date.now(); save(); render(); },
   rMoveNew: d => { const f = newFolder(); if (f) MENU.rMoveTo({ id: d.id, f: f.id }); },
-  rDel: d => openMenu(`¿Eliminar «${S.routines.find(x => x.id === d.id).name}»?`, mItem('🗑', 'Eliminar rutina', 'rDelYes', `data-id="${d.id}"`, 'danger') + mItem('↩', 'Cancelar', 'done')),
+  rDel: d => openMenu(`¿Eliminar «${S.routines.find(x => x.id === d.id).name}»?`, mItem('trash', 'Eliminar rutina', 'rDelYes', `data-id="${d.id}"`, 'danger') + mItem('redo', 'Cancelar', 'done')),
   rDelYes: d => { gone('r:' + d.id); S.routines = S.routines.filter(r => r.id !== d.id); save(); render(); toast('Rutina eliminada'); },
   fRename: d => { const f = S.folders.find(x => x.id === d.id), n = prompt('Nuevo nombre de la carpeta', f.name)?.trim(); if (n) { f.name = n; f.u = Date.now(); save(); } render(); },
   fDel: d => { gone('f:' + d.id); S.folders = S.folders.filter(f => f.id !== d.id); S.routines.forEach(r => { if (r.folder === d.id) delete r.folder; }); save(); render(); toast('Carpeta eliminada; sus rutinas siguen en Mis rutinas'); },
   discardAsk: () => openMenu('¿Seguro que quieres descartar el entrenamiento?', `<p class="muted">Se perderán todas las series de este entreno.</p>`
-    + mItem('🗑', 'Descartar entrenamiento', 'discardYes', '', 'danger') + mItem('↩', 'Cancelar', 'done')),
+    + mItem('trash', 'Descartar entrenamiento', 'discardYes', '', 'danger') + mItem('redo', 'Cancelar', 'done')),
   discardYes: () => { S.active = null; save(); render(); toast('Entreno descartado'); scheduleRest(null); },
 };
 
@@ -1343,15 +1395,15 @@ const A = {
   },
   exMenu: d => {
     const i = +d.i, list = S.active.items, it = list[i], linked = it.ss && list[i + 1]?.ss === it.ss, a = `data-i="${i}"`;
-    openMenu(ex(it.exId).name, mItem('⇅', 'Reordenar ejercicios', 'reorder') + mItem('🔄', 'Reemplazar ejercicio', 'replace', a)
-      + (list[i + 1] ? mItem(linked ? '✂' : '🔗', linked ? 'Separar de la superserie' : 'Superserie con el siguiente', 'ss', a) : '')
-      + mItem('🔥', 'Añadir series de calentamiento', 'warm', a) + mItem('✕', 'Eliminar ejercicio', 'rm', a, 'danger'));
+    openMenu(ex(it.exId).name, mItem('list', 'Reordenar ejercicios', 'reorder') + mItem('swap', 'Reemplazar ejercicio', 'replace', a)
+      + (list[i + 1] ? mItem(linked ? 'scissors' : 'link', linked ? 'Separar de la superserie' : 'Superserie con el siguiente', 'ss', a) : '')
+      + mItem('warm', 'Añadir series de calentamiento', 'warm', a) + mItem('x', 'Eliminar ejercicio', 'rm', a, 'danger'));
   },
   setMenu: d => {
     const s = S.active.items[d.i].sets[d.j], a = `data-i="${d.i}" data-j="${d.j}"`;
-    openMenu(`Serie ${+d.j + 1}`, [['', '1', 'Normal'], ['w', 'C', 'Calentamiento'], ['f', 'F', 'Al fallo'], ['d', 'D', 'Drop set']]
-      .map(([t, ic, l]) => mItem(`<b class="t-${t}">${ic}</b>`, l + ((s.t || '') === t ? ' ✓' : ''), 'type', `${a} data-v="${t}"`)).join('')
-      + mItem('✕', 'Eliminar serie', 'delset', a, 'danger'));
+    openMenu(`Serie ${+d.j + 1}`, [['', 'weight', 'Normal'], ['w', 'warm', 'Calentamiento'], ['f', 'award', 'Al fallo'], ['d', 'down', 'Drop set']]
+      .map(([t, icon, label]) => mItem(icon, label + ((s.t || '') === t ? ' ✓' : ''), 'type', `${a} data-v="${t}"`)).join('')
+      + mItem('x', 'Eliminar serie', 'delset', a, 'danger'));
   },
   rpeMenu: d => {
     const s = S.active.items[d.i].sets[d.j], a = `data-i="${d.i}" data-j="${d.j}"`;
@@ -1399,11 +1451,11 @@ const A = {
   newFolder: () => { if (newFolder()) render(); },
   folderToggle: d => { const f = S.folders.find(x => x.id === d.id); f.closed = !f.closed; f.u = Date.now(); save(); smooth(render); },
   folderMenu: d => { const f = S.folders.find(x => x.id === d.id), a = `data-id="${d.id}"`;
-    openMenu(f.name, mItem('✎', 'Renombrar carpeta', 'fRename', a) + mItem('🗑', 'Eliminar carpeta', 'fDel', a, 'danger')); },
+    openMenu(f.name, mItem('edit', 'Renombrar carpeta', 'fRename', a) + mItem('trash', 'Eliminar carpeta', 'fDel', a, 'danger')); },
   routineMenu: d => { const r = S.routines.find(x => x.id === d.id), a = `data-id="${d.id}"`;
-    openMenu(r.name, mItem('✎', 'Editar rutina', 'rEdit', a) + mItem('⧉', 'Duplicar rutina', 'rDup', a) + mItem('📁', 'Mover a carpeta', 'rMove', a)
-      + mItem('🗑', 'Eliminar rutina', 'rDel', a, 'danger')); },
-  finishMenu: () => openMenu('¿Terminar el entreno?', mItem('✓', 'Guardar entreno', 'save') + mItem('🗑', 'Descartar', 'discardAsk', '', 'danger')),
+    openMenu(r.name, mItem('edit', 'Editar rutina', 'rEdit', a) + mItem('duplicate', 'Duplicar rutina', 'rDup', a) + mItem('folder', 'Mover a carpeta', 'rMove', a)
+      + mItem('trash', 'Eliminar rutina', 'rDel', a, 'danger')); },
+  finishMenu: () => openMenu('¿Terminar el entreno?', mItem('check', 'Guardar entreno', 'save') + mItem('trash', 'Descartar', 'discardAsk', '', 'danger')),
   finish: () => {
     const a = S.active;
     const items = a.items.map(it => ({ exId: it.exId, ...(it.ss && { ss: it.ss }),
@@ -1415,7 +1467,7 @@ const A = {
     const w = { id: a.id, name: a.name.trim() || 'Entreno', start: a.start, end: Date.now(), items };
     S.workouts.unshift(w); S.active = null; save(); scheduleRest(null);
     go('resumen', { id: w.id, tab: 'inicio' });
-    toast(prs.length ? '🏆 ¡Nuevo récord en ' + prs.join(', ') + '!' : '💪 Entreno guardado');
+    toast(prs.length ? '¡Nuevo récord en ' + prs.join(', ') + '!' : 'Entreno guardado');
   },
   openW: d => go('workout', { id: d.id }),
   openResumen: d => go('resumen', { id: d.id }),
