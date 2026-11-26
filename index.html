@@ -96,7 +96,8 @@ button,input,select{font:inherit;color:inherit}
 .rpegrid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:8px 0}.rpegrid .chip{padding:12px;font-size:17px}
 .sh{font-size:12px;color:var(--mut);margin:10px 0 4px}
 .setwrap{position:relative;border-radius:10px;overflow:hidden;margin:2px 0}
-.swbg{position:absolute;inset:0;background:#6e2424;color:#fff;display:flex;align-items:center;justify-content:flex-end;padding-right:18px;font-weight:700;transition:background .15s}
+.swbg{position:absolute;inset:0;background:#6e2424;color:#fff;display:flex;align-items:center;justify-content:flex-end;padding-right:18px;font-weight:700;opacity:0;transition:opacity .12s ease,background .15s}
+.setwrap.swiping .swbg{opacity:1}
 .setwrap.armed .swbg{background:var(--bad)}
 .set{position:relative;padding:4px 0;border-radius:10px;background:var(--card);touch-action:pan-y}.set.done{background:#1D3533}
 .set input{width:100%;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:9px 4px;text-align:center}
@@ -305,7 +306,7 @@ nav button b{font-size:19px}
 .sh{font-size:10px;letter-spacing:.02em}
 .set{gap:5px}
 .set input{font-weight:700;font-variant-numeric:tabular-nums}
-.set.done{background:rgba(102,220,192,.09)}
+.set.done{background:#1D3533}
 .prog.up{background:rgba(183,154,255,.1);border-color:rgba(183,154,255,.34)}
 .restchip{background:rgba(255,255,255,.035);border-color:rgba(183,154,255,.13)}
 .note:focus,.field:focus,.set input:focus{outline:2px solid rgba(183,154,255,.55);outline-offset:1px}
@@ -343,7 +344,7 @@ nav button b{font-size:19px}
   <button class="btn wide" data-a="wheelDone">Listo</button></div></div>
 <script src="ejercicios.js"></script>
 <script>
-const VERSION = 37; // súbelo junto con C en sw.js
+const VERSION = 38; // súbelo junto con C en sw.js
 const MUSCLES =['Pecho','Espalda','Hombros','Brazos','Piernas','Core'];
 const RESTS = Array.from({ length: 41 }, (_, i) => i * 15); // 0 a 10 min, de 15 en 15 s
 const RING = 119.38; // perímetro del anillo de descanso (2π·19)
@@ -1712,7 +1713,7 @@ document.addEventListener('pointermove', e => {
   if (!sw.on) {
     if (Math.abs(dy) > 10 && Math.abs(dy) > Math.abs(dx)) { sw = null; return; } // es un scroll vertical
     if (dx > -10 || Math.abs(dx) < Math.abs(dy)) return;
-    sw.on = true; sw.row.style.transition = 'none';
+    sw.on = true; sw.row.parentElement.classList.add('swiping'); sw.row.style.transition = 'none';
   }
   sw.dx = Math.min(0, dx);
   sw.row.style.transform = `translateX(${sw.dx}px)`;
@@ -1727,7 +1728,7 @@ function swEnd() {
   if (-dx > row.offsetWidth * .35) {
     row.style.transform = 'translateX(-100%)'; navigator.vibrate?.(15);
     setTimeout(() => { S.active.items[row.dataset.si].sets.splice(row.dataset.sj, 1); save(); render(); toast('Serie borrada'); }, 200);
-  } else { row.style.transform = ''; row.parentElement.classList.remove('armed'); }
+  } else { row.style.transform = ''; row.parentElement.classList.remove('armed', 'swiping'); }
 }
 document.addEventListener('pointerup', swEnd);
 document.addEventListener('pointercancel', swEnd);
