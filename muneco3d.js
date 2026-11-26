@@ -390,7 +390,12 @@ const FIG3D = (() => {
         for (const h of hands()) { const near = h.z > 0;
           dumbbell(h, gAx(near)); }
       }
-      else if (o.k === 'handle') for (const h of hands()) { const ax = gAx(h.z > 0); rod(h.clone().addScaledVector(ax, -7), h.clone().addScaledVector(ax, 7), 2.2, mats.metal); }
+      else if (o.k === 'handle') { const hs = hands();
+        if (hs.length === 2 && hs[0].distanceTo(hs[1]) < 24) { // agarre en V (remo): dos asas paralelas unidas por delante en una anilla
+          const m = hs[0].clone().lerp(hs[1], .5), fw = faDir => faDir, f = hs[0].clone().sub(bonePos('RightForeArm')).normalize(), ring = m.clone().addScaledVector(f, 16);
+          for (const h of hs) { const ax = gAx(h.z > 0); gripBar(h, ax, 6); for (const sg of [-1, 1]) rod(h.clone().addScaledVector(ax, sg * 8), ring, 1.3, mats.metal); }
+          mesh(G.cyl, mats.metal, ring, V3(2.6, 1.2, 2.6), new THREE.Quaternion().setFromUnitVectors(V3(0, 1, 0), f));
+        } else for (const h of hs) gripBar(h, gAx(h.z > 0), 7); }
       else if (o.k === 'cable') {
         const q0 = w(o.q), h0 = w(o.h), hs = F ? [hand(true), hand(false)] : hands();
         const h = hs.reduce((a, b) => a.distanceTo(h0) < b.distanceTo(h0) ? a : b), q = F ? q0 : V3(q0.x, q0.y, h.z);
@@ -424,8 +429,8 @@ const FIG3D = (() => {
       else if (o.k === 'sbar') { const a = hand(true), b = hand(false), d = b.clone().sub(a).normalize(); rod(a.clone().addScaledVector(d, -12), b.clone().addScaledVector(d, 12), 1.9, mats.metal); }
       else if (o.k === 'latbar') { // barra de jalón: recta en el centro y caída en las puntas
         const g = hand(true).lerp(hand(false), .5), c = V3(g.x, g.y, 0);
-        rod(V3(c.x, c.y, -58), V3(c.x, c.y, 58), 1.9, mats.metal); for (const s of [-1, 1]) rod(V3(c.x, c.y, s * 58), V3(c.x, c.y - 8, s * 82), 1.9, mats.metal);
-        for (const s of [-1, 1]) mesh(G.cyl, mats.plate, V3(c.x, c.y - 6, s * 74), V3(2.6, 14, 2.6), new THREE.Quaternion().setFromUnitVectors(V3(0, 1, 0), V3(0, -8, s * 24).normalize())); }
+        rod(V3(c.x, c.y, -70), V3(c.x, c.y, 70), 1.9, mats.metal); for (const s of [-1, 1]) { rod(V3(c.x, c.y, s * 70), V3(c.x, c.y - 9, s * 92), 1.9, mats.metal);
+          rod(V3(c.x, c.y - 4.5, s * 81), V3(c.x, c.y - 9, s * 92), 2.4, mats.rubber); gripBar(V3(c.x, c.y, s * 60), Z, 9); } }
       else if (o.k === 'pecdeck') { // contractora: torre alta detrás del respaldo, ejes muy por encima de la cabeza y asas verticales que bajan hasta las manos
         const sh = bonePos('RightArm').lerp(bonePos('LeftArm'), .5), rv = o.rev ? -1 : 1, px = o.rev ? sh.x + 26 : sh.x - 10, bx = o.rev ? sh.x + 48 : sh.x - 30, top = bonePos('Head').y + 60;
         for (const s of ['Right', 'Left']) { const g = grip(s), sg = g.z > 0 ? 1 : -1, piv = V3(px, top, sg * 30), up = V3(g.x, top - 6, g.z);
