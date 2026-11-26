@@ -179,9 +179,21 @@ const FIG3D = (() => {
       fig.updateMatrixWorld(true);
       fig.position.add(W(J.hip).sub(B.Hips.getWorldPosition(V3()))); fig.updateMatrixWorld(true);
       aim(B.Neck, B.Head, W(J.head).sub(W(J.sho)));
+      if (P.p.tw != null) {
+        // giro del tronco sobre su eje (russian twist): la mitad en cada vértebra y las manos juntas delante del pecho
+        const axis = W(J.sho).sub(W(J.hip)).normalize(), half = new THREE.Quaternion().setFromAxisAngle(axis, P.p.tw * Math.PI / 360);
+        turnWorld(B.Spine1, half); fig.updateMatrixWorld(true); turnWorld(B.Spine2, half); fig.updateMatrixWorld(true);
+        const chest = B.Spine2.getWorldPosition(V3()), fwd = V3(1, 0, 0).sub(axis.clone().multiplyScalar(axis.x)).normalize().applyAxisAngle(axis, P.p.tw * Math.PI / 180);
+        const tgt = chest.clone().addScaledVector(fwd, 36).addScaledVector(axis, -24);
+        for (const s of ['Right', 'Left']) {
+          const sp = B[s + 'Arm'].getWorldPosition(V3()), mid = sp.clone().lerp(tgt, .5).addScaledVector(axis, -10);
+          aim(B[s + 'Arm'], B[s + 'ForeArm'], mid.sub(sp)); aim(B[s + 'ForeArm'], B[s + 'Hand'], tgt.clone().sub(B[s + 'ForeArm'].getWorldPosition(V3())));
+        }
+      } else {
       // cerca de la cámara (+z) = lado derecho del muñeco
       aim(B.RightArm, B.RightForeArm, dir2(J.sho, J.elb, FIG.L.ua, 1)); aim(B.RightForeArm, B.RightHand, dir2(J.elb, J.han, FIG.L.fa, .4));
       aim(B.LeftArm, B.LeftForeArm, dir2(J.sho, J.elb2, FIG.L.ua, -1)); aim(B.LeftForeArm, B.LeftHand, dir2(J.elb2, J.han2, FIG.L.fa, -.4));
+      }
       aim(B.RightUpLeg, B.RightLeg, dir2(J.hip, J.kne, FIG.L.th, .15)); aim(B.RightLeg, B.RightFoot, dir2(J.kne, J.ank, FIG.L.sh, 0)); aim(B.RightFoot, B.RightToeBase, dir2(J.ank, J.toe, 1e3, 0));
       aim(B.LeftUpLeg, B.LeftLeg, dir2(J.hip, J.kne2, FIG.L.th, -.15)); aim(B.LeftLeg, B.LeftFoot, dir2(J.kne2, J.ank2, FIG.L.sh, 0)); aim(B.LeftFoot, B.LeftToeBase, dir2(J.ank2, J.toe2, 1e3, 0));
       return;
@@ -248,6 +260,10 @@ const FIG3D = (() => {
       }
       else if (o.k === 'roller') { const c = w(o.p); rod(V3(c.x, c.y, -24), V3(c.x, c.y, 24), 8, mats.pad); }
       else if (o.k === 'wheel') { const c = w(o.p); disc(c, 10, 6); rod(V3(c.x, c.y, -14), V3(c.x, c.y, 14), 1.6, mats.metal); }
+      else if (o.k === 'kpad') for (const [s_, z] of [['Right', 1], ['Left', -1]]) { // almohadillas de la máquina de abductores/aductores
+        const kn = bonePos(s_ + 'Leg'), c = kn.clone().add(V3(-2, 0, z * (o.side === 'out' ? 10 : -10)));
+        mesh(G.box, mats.pad, c, V3(16, 22, 5)); rod(c.clone().add(V3(0, -11, 0)), V3(c.x, 0, c.z), 2, mats.frame); }
+      else if (o.k === 'back') { const h = bonePos('Hips'), s2 = bonePos('Spine2'); mesh(G.box, mats.pad, h.clone().lerp(s2, .55).add(V3(-14, 0, 0)), V3(6, 60, 44)); }
       else if (o.k === 'sled') { const c = w(o.p), q = new THREE.Quaternion().setFromAxisAngle(Z, 38 * Math.PI / 180); mesh(G.box, mats.pad, c, V3(12, 56, 54), q); }
     }
   }
@@ -296,7 +312,7 @@ const FIG3D = (() => {
       if (w && (R.domElement.width !== Math.round(w * pr) || R.domElement.height !== Math.round(h * pr))) { R.setPixelRatio(pr); R.setSize(w, h, false); }
       const id = host.dataset.fig3d;
       if (!cur || cur.id !== id) { const e = (typeof allEx === 'function' ? allEx() : LIB).find(x => x.id === id); cur = e && { id, e, f: FIG.pick(e.name), tags: tagsFor(e.main) }; hlKey = null; }
-      if (cur?.f) { const k = matchMedia('(prefers-reduced-motion: reduce)').matches ? .55 : FIG.phase(t); pose(cur.f, k, cur.tags); shoot(R, cur.f, w / h || 4 / 3); }
+      if (cur?.f) { const k = window.FIG_K ?? (matchMedia('(prefers-reduced-motion: reduce)').matches ? .55 : FIG.phase(t)); pose(cur.f, k, cur.tags); shoot(R, cur.f, w / h || 4 / 3); }
     } else cur = null;
     thumbStep();
     requestAnimationFrame(loop);

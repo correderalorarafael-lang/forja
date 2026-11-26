@@ -143,6 +143,8 @@ const FIG = (() => {
   const roller = p => sink ? put({ k: 'roller', p }) : `<circle cx="${r1(p[0])}" cy="${r1(p[1])}" r="9" fill="${M.pad}" stroke="${M.padHi}" stroke-width="1.2"/>`;
   const wheel = p => sink ? put({ k: 'wheel', p }) : `<circle cx="${r1(p[0])}" cy="${r1(p[1])}" r="11" fill="${M.plate}" stroke="${M.acc}" stroke-width="2.4"/>`;
   const sled = p => sink ? put({ k: 'sled', p }) : `<rect x="-6" y="-26" width="14" height="56" rx="4" fill="${M.pad}" stroke="${M.padHi}" stroke-width="1.2" transform="translate(${P(p)}) rotate(-38)"/>`;
+  const kpad = side => sink ? put({ k: 'kpad', side }) : '';
+  const back = () => sink ? put({ k: 'back' }) : '';
   const rect = (x, y, w, h, r = 5, f = M.pad) => sink ? put({ k: 'box', x, y, w, h }) : `<rect x="${r1(x)}" y="${r1(y)}" width="${r1(w)}" height="${r1(h)}" rx="${r}" fill="${f}" stroke="${M.padHi}" stroke-width="1.2"/>`;
   const bar = (a, b, w = 4, c = M.metal, z) => sink ? put({ k: 'bar', a, b, w, metal: c === M.metal || c === M.cable, z }) : `<path d="M${P(a)}L${P(b)}" stroke="${c}" stroke-width="${w}" stroke-linecap="round"/>`;
   const plate = (p, r = 15) => sink ? put({ k: 'barbell', p, r }) : `<circle cx="${r1(p[0])}" cy="${r1(p[1])}" r="${r}" fill="${M.plate}" stroke="${M.acc}" stroke-width="2"/><circle cx="${r1(p[0])}" cy="${r1(p[1])}" r="${r * .32}" fill="${M.metal}"/>`;
@@ -253,21 +255,21 @@ const FIG = (() => {
       bg: () => legs4(110, 300, 228) + rect(110, 216, 190, 13), fg: J => roller(off(J.ank, 2, -9)) },
     hipThrust: { an: ['sho', 158, 186], A: { t: -128, ua: 100, fa: 40, th: 150, sh: 14, h: -20, fT: [282, 252], fT2: [282, 252], fb: -1, fb2: -1 }, B: { t: -86, ua: 104, fa: 50, th: 96, sh: 6, h: -40, fT: [282, 252], fT2: [282, 252], fb: -1, fb2: -1 },
       bg: () => legs4(96, 160, 206) + rect(96, 196, 64, 14), fg: (J, eq) => eq === 'single' ? '' : plate(off(J.hip, 2, -18), 15) },
-    hipThrust1: { an: ['sho', 158, 186], A: { t: -128, ua: -20, fa: -40, th: 150, sh: 14, th2: 160, sh2: 100, h: -20, fT: [282, 252], fb: -1 }, B: { t: -86, ua: -20, fa: -40, th: 96, sh: 6, th2: 140, sh2: 100, h: -40, fT: [282, 252], fb: -1 },
+    hipThrust1: { an: ['sho', 158, 186], A: { t: -128, ua: 100, fa: 40, th: 150, sh: 14, th2: 150, sh2: 95, h: -20, fT: [282, 252], fb: -1 }, B: { t: -86, ua: 104, fa: 50, th: 96, sh: 6, th2: 118, sh2: 100, h: -40, fT: [282, 252], fb: -1 },
       bg: () => legs4(96, 160, 206) + rect(96, 196, 64, 14) },
     calfStanding: { an: ['toe', 232, 246], A: { ...std, ua: -30, fa: 160, ft: 84 }, B: { t: 180, ua: -30, fa: 160, th: 0, sh: 0, ft: 42 },
       bg: () => rect(200, 248, 60, 12, 3) + bar([150, 40], [150, FLOOR], 7, '#2c2b45'), fg: J => rect(J.sho[0] - 26, J.sho[1] - 14, 34, 12, 6) },
     calfSeated: { an: ['toe', 268, 246], A: { t: 184, ua: 40, fa: 90, th: 88, sh: 0, ft: 80 }, B: { t: 184, ua: 40, fa: 90, th: 88, sh: 0, ft: 40 },
       bg: J => seat(J.hip[0] - 30, J.hip[1] + 11, 52) + rect(232, 248, 60, 12, 3), fg: J => rect(J.kne[0] - 20, J.kne[1] - 24, 34, 12, 6) },
     plank: { an: ['toe', 92, 259], A: { t: 100, th: -80, sh: -80, ft: -6, hT: [262, 255], hb: -1 }, B: { t: 101.5, th: -78.5, sh: -78.5, ft: -6, hT: [262, 255], hb: -1 } },
-    crunch: { an: ['hip', 236, 246], A: { t: -90, ua: -150, fa: 40, th: 134, sh: 18, h: 0 }, B: { t: -54, ua: -150, fa: 46, th: 134, sh: 18, h: 30 } },
+    crunch: { an: ['hip', 236, 240], A: { t: -92, ua: 96, fa: 98, th: 134, sh: 18, h: -4, fT: [298, 250], fT2: [298, 250], fb: -1, fb2: -1 }, B: { t: -116, ua: 122, fa: 120, th: 134, sh: 18, h: -18, fT: [298, 250], fT2: [298, 250], fb: -1, fb2: -1 } },
     cableCrunch: { an: ['kne', 196, 250], A: { t: 176, ua: 160, fa: 20, th: 0, sh: -90, ft: -10 }, B: { t: 92, ua: 100, fa: -30, th: 0, sh: -90, ft: -10 },
       bg: () => tower(232), fg: J => cable(J.han, [232, 26]) },
     legRaise: { an: ['han', 214, 0], A: { t: 180, ua: 180, fa: 180, th: 2, sh: 0, ft: 70 }, B: { t: 184, ua: 180, fa: 180, th: 88, sh: 84, ft: 150 },
       bg: () => bar([120, -4], [300, -4], 6, M.metal, 'across') + bar([128, -4], [128, FLOOR], 7, '#2c2b45') + bar([292, -4], [292, FLOOR], 7, '#2c2b45') },
     abWheel: { an: ['kne', 150, 250], A: { t: 168, th: 0, sh: -90, ft: -10, hT: [196, 246], hb: 1 }, B: { t: 100, th: 52, sh: -90, ft: -10, hT: [304, 246], hb: 1 },
       fg: J => wheel(off(J.han, 0, 4)) },
-    russian: { an: ['hip', 200, 240], A: { t: -158, ua: 74, uas: .9, fa: 92, fas: .9, th: 128, sh: 70, ft: 120 }, B: { t: -158, ua: 50, uas: .4, fa: 58, fas: .45, th: 128, sh: 70, ft: 120 },
+    russian: { an: ['hip', 200, 236], A: { t: -142, th: 124, sh: 66, ft: 115, tw: -42 }, B: { t: -142, th: 124, sh: 66, ft: 115, tw: 42 },
       fg: J => db(J.han) },
     // de frente
     lateral: { v: 'front', A: { ua: 6, fa: 8 }, B: { ua: 86, fa: 92 }, fg: (J, eq) => eq === 'cable' ? cable(J.R.H, [J.cx - 70, 252]) + cable(J.L.H, [J.cx + 70, 252]) : db(J.R.H) + db(J.L.H) },
@@ -275,8 +277,8 @@ const FIG = (() => {
     shrug: { v: 'front', A: { ua: 8, fa: 6, lift: 0 }, B: { ua: 8, fa: 6, lift: 16 }, fg: J => db(J.R.H) + db(J.L.H) },
     crossover: { v: 'front', A: { ua: 78, fa: 84 }, B: { ua: 16, fa: -66 }, fg: J => cable(J.R.H, [J.cx + 150, 34]) + cable(J.L.H, [J.cx - 150, 34]), bg: J => tower(J.cx + 150) + tower(J.cx - 150) },
     pecDeck: { v: 'front', A: { ua: 86, fa: 150, seat: 1, kx: 22 }, B: { ua: 50, fa: 178, seat: 1, kx: 22 }, bg: J => rect(J.cx - 40, J.hipY + 6, 80, 12) },
-    abductor: { v: 'front', A: { ua: 12, fa: 20, seat: 1, kx: 18 }, B: { ua: 12, fa: 20, seat: 1, kx: 46 }, bg: J => rect(J.cx - 46, J.hipY + 6, 92, 12) },
-    adductor: { v: 'front', A: { ua: 12, fa: 20, seat: 1, kx: 46 }, B: { ua: 12, fa: 20, seat: 1, kx: 18 }, bg: J => rect(J.cx - 46, J.hipY + 6, 92, 12) },
+    abductor: { v: 'front', A: { ua: 12, fa: 20, seat: 1, kx: 18 }, B: { ua: 12, fa: 20, seat: 1, kx: 46 }, bg: J => rect(J.cx - 46, J.hipY + 6, 92, 12) + back() + kpad('out') },
+    adductor: { v: 'front', A: { ua: 12, fa: 20, seat: 1, kx: 46 }, B: { ua: 12, fa: 20, seat: 1, kx: 18 }, bg: J => rect(J.cx - 46, J.hipY + 6, 92, 12) + back() + kpad('in') },
   };
 
   // --- qué plantilla usa cada ejercicio (por su nombre) ---
