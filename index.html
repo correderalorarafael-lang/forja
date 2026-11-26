@@ -342,7 +342,8 @@ nav button b{font-size:19px}
 .kpis>div{display:flex;flex-direction:column;gap:2px;padding:13px 12px;border-radius:16px;background:rgba(25,25,42,.84);border:1px solid rgba(183,154,255,.12);min-width:0}
 .kpis small{font-size:11px}.kpis b{font-size:20px;letter-spacing:-.03em;font-variant-numeric:tabular-nums;white-space:nowrap}
 .dl{font-size:11px;font-weight:700;color:var(--mut)}.dl.up{color:var(--ok)}.dl.down{color:var(--bad)}
-.kpi-note{display:block;font-size:11px;margin:7px 2px 0}
+.lastw{display:grid;grid-template-columns:1fr auto;grid-template-areas:"l i" "n i" "m i";align-items:center;width:100%;margin:12px 0 0;padding:13px 14px;border-radius:16px;background:rgba(25,25,42,.84);border:1px solid rgba(183,154,255,.12);text-align:left;cursor:pointer;color:var(--txt)}
+.lastw small{grid-area:l;font-size:11px}.lastw b{grid-area:n;font-size:15px;margin:2px 0}.lastw span{grid-area:m;font-size:12px;color:var(--mut)}.lastw .ui-icon{grid-area:i;color:var(--mut)}
 /* --- entreno en curso --- */
 .exname>span{display:flex;flex-direction:column;min-width:0}
 .exprog{display:flex;align-items:center;gap:4px;font-size:11px;font-weight:600;margin-top:2px}.exprog .ui-icon{width:13px;height:13px}
@@ -399,7 +400,7 @@ body:has(#rest.show) main{padding-bottom:200px}
   <button class="btn wide" data-a="wheelDone">Listo</button></div></div>
 <script src="ejercicios.js"></script>
 <script>
-const VERSION = 40; // súbelo junto con C en sw.js
+const VERSION = 41; // súbelo junto con C en sw.js
 const MUSCLES =['Pecho','Espalda','Hombros','Brazos','Piernas','Core'];
 const RESTS = Array.from({ length: 41 }, (_, i) => i * 15); // 0 a 10 min, de 15 en 15 s
 const RING = 119.38; // perímetro del anillo de descanso (2π·19)
@@ -823,7 +824,7 @@ function nextRoutine() {
   return { r: done.length < list.length ? list.find(r => !lastDone(r.name)) : done.reduce((a, b) => lastDone(b.name) < lastDone(a.name) ? b : a), when: 'hoy' };
 }
 const ago = t => { const d = Math.round((new Date().setHours(0, 0, 0, 0) - new Date(t).setHours(0, 0, 0, 0)) / 864e5); return d <= 0 ? 'hoy' : d === 1 ? 'ayer' : `hace ${d} días`; };
-const delta = (a, b) => { if (!b) return a ? '<span class="dl up">nuevo</span>' : ''; const p = pct(a, b); return `<span class="dl ${p > 0 ? 'up' : p < 0 ? 'down' : ''}">${p > 0 ? '+' : ''}${p} %</span>`; };
+const delta = (a, b) => { if (!b) return a ? '<span class="dl up">nuevo</span>' : ''; const p = pct(a, b); if (!p) return ''; return `<span class="dl ${p > 0 ? 'up' : p < 0 ? 'down' : ''}">${p > 0 ? '+' : ''}${p} %</span>`; };
 const setCount = a => a.items.reduce((t, it) => t + it.sets.length, 0), doneCount = a => a.items.reduce((t, it) => t + it.sets.filter(s => s.done).length, 0);
 function pInicio() {
   const prs = prCounts(), now = Date.now(), h = new Date().getHours(), name = S.profile.name.split(' ')[0];
@@ -838,9 +839,7 @@ function pInicio() {
       <div class="row between"><small>${doneCount(a)} de ${setCount(a)} series · ${fmtKg(vol(a))}</small><span class="btn sm">Continuar ${uiIcon('arrow')}</span></div></section>`
     : r ? `<section class="next ${nx.when === 'hoy' ? '' : 'later'}"><div class="next-top"><small class="home-kicker">${kicker}</small>${af ? `<small class="prog-name">${uiIcon('folder')} ${esc(af.name)}</small>` : ''}</div><h2>${esc(r.name)}</h2>
       <p>${r.items.length} ejercicios · ${r.items.reduce((t, it) => t + it.sets, 0)} series · ${lastDone(r.name) ? 'última vez ' + ago(lastDone(r.name)) : 'aún sin estrenar'}</p>
-      <div class="next-ex">${r.items.slice(0, 4).map(it => thumb(ex(it.exId))).join('')}${r.items.length > 4 ? `<span class="thumb ph">+${r.items.length - 4}</span>` : ''}</div>
-      <div class="next-actions"><button class="btn ${nx.when === 'hoy' ? '' : 'ghost'}" data-a="startRoutine" data-id="${r.id}">${nx.when === 'hoy' ? 'Empezar' : 'Adelantarla'} ${uiIcon('arrow')}</button><button class="btn ghost" data-tab="entreno">Otra rutina</button></div>
-      ${!af && S.folders.length ? `<small class="next-hint">Marca una carpeta como programa activo desde su menú ⋮ en Entrenamiento.</small>` : ''}</section>`
+      <div class="next-actions"><button class="btn ${nx.when === 'hoy' ? '' : 'ghost'}" data-a="startRoutine" data-id="${r.id}">${nx.when === 'hoy' ? 'Empezar' : 'Adelantarla'} ${uiIcon('arrow')}</button><button class="btn ghost" data-tab="entreno">Otra rutina</button></div></section>`
     : `<section class="next"><small class="home-kicker">PRIMER PASO</small><h2>Empieza tu primer entreno</h2><p>Crea una rutina o entrena libre y FORJA irá aprendiendo de tus series.</p>
       <div class="next-actions"><button class="btn" data-a="startEmpty">Entreno libre ${uiIcon('arrow')}</button><button class="btn ghost" data-a="newRoutine">Crear rutina</button></div></section>`;
   return ['Inicio', `
@@ -852,12 +851,9 @@ function pInicio() {
     <div class="kpis"><div><small>Entrenos</small><b>${week.length}</b>${delta(week.length, prev.length)}</div>
       <div><small>Series</small><b>${fmt(sum(week, nsets))}</b>${delta(sum(week, nsets), sum(prev, nsets))}</div>
       <div><small>Volumen</small><b>${(sum(week, vol) / 1000).toLocaleString('es', { maximumFractionDigits: 1 })} t</b>${delta(sum(week, vol), sum(prev, vol))}</div></div>
-    <small class="kpi-note">Últimos 7 días comparado con los 7 anteriores</small>
-    <div class="section-head"><h2>Actividad reciente</h2>${S.workouts.length ? `<small>${S.workouts.length} ${S.workouts.length === 1 ? "sesión" : "sesiones"}</small>` : ''}</div>
-    ${S.workouts.map(w => feedCard(w, prs[w.id])).join('')
-      || `<div class="home-empty"><span class="empty-mark" aria-hidden="true">${uiIcon('arrow')}</span><div><b>Tu historial empieza aquí</b><p>Cuando termines un entreno, lo verás aparecer en esta lista.</p></div></div>`}`];
+    ${S.workouts[0] ? `<button class="lastw" data-a="openW" data-id="${S.workouts[0].id}"><small>Último entreno</small><b>${esc(S.workouts[0].name)}</b><span>${ago(S.workouts[0].start)} · ${fmtKg(vol(S.workouts[0]))}</span>${uiIcon('chevron')}</button>` : ''}`];
 }
-let pMetric = 'dur';
+let pMetric = 'dur', histN = 5;
 function pPerfil() {
   const p = S.profile, prs = prCounts(), total = Object.values(prs).reduce((a, b) => a + b, 0);
   return [p.name || 'Perfil', `
@@ -873,9 +869,9 @@ function pPerfil() {
     <h2>Información</h2>
     <div class="tiles"><button class="tile" data-a="goSub" data-p="stats">${uiIcon('bars')} Estadísticas</button><button class="tile" data-a="goSub" data-p="ejercicios">${uiIcon('exercise')} Ejercicios</button>
       <button class="tile" data-a="goSub" data-p="cuerpo">${uiIcon('ruler')} Medidas</button><button class="tile" data-a="goSub" data-p="calendario">${uiIcon('calendar')} Calendario</button></div>
-    <h2>Entrenamientos</h2>
-    ${S.workouts.slice(0, 3).map(w => feedCard(w, prs[w.id])).join('') || '<p class="muted">Aún no hay entrenos.</p>'}
-    ${S.workouts.length > 3 ? '<button class="btn ghost wide" data-tab="inicio">Ver todos</button>' : ''}`];
+    <div class="section-head"><h2>Historial</h2>${S.workouts.length ? `<small>${S.workouts.length} ${S.workouts.length === 1 ? 'sesión' : 'sesiones'}</small>` : ''}</div>
+    ${S.workouts.slice(0, histN).map(w => feedCard(w, prs[w.id])).join('') || '<p class="muted">Cuando termines un entreno, aparecerá aquí.</p>'}
+    ${S.workouts.length > histN ? `<button class="btn ghost wide" data-a="histMore">Ver más (${S.workouts.length - histN})</button>` : ''}`];
 }
 function pStats() {
   const ws = S.workouts, hours = ws.reduce((t, w) => t + (w.end - w.start), 0) / 3.6e6;
@@ -1762,6 +1758,7 @@ const A = {
   mslide: (d, el) => { const sl = el.closest('.card').querySelector('.mslides'); sl.scrollTo({ left: d.k * sl.clientWidth, behavior: 'smooth' }); },
   notifAsk: async () => { await Notification.requestPermission(); pushSub().catch(() => {}); render(); },
   bellTest: () => alarm(),
+  histMore: () => { histN += 10; render(); },
   pMetric: d => { pMetric = d.k; smooth(render); },
   photoPick: () => $('#photoFile').click(),
   nameEdit: async () => { const n = await textForja('Tu nombre', 'Así aparecerá en tu perfil y en tus resúmenes.', { label: 'Nombre', value: S.profile.name, placeholder: 'Cómo quieres que te llamemos', icon: 'user', accept: 'Guardar' }); if (n != null) { S.profile.name = n; save(); smooth(render); } },
