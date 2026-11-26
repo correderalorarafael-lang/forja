@@ -355,6 +355,13 @@ nav button b{font-size:19px}
 #rest{flex-wrap:wrap;row-gap:8px}
 .rnext{flex:0 0 100%;display:block;background:none;border:0;padding:0 2px 8px;border-bottom:1px solid rgba(183,154,255,.12);text-align:left;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer;color:var(--txt)}
 .rnext[hidden]{display:none}.rnext small{font-size:12px}
+.wd.plan:not(.on) i{border-style:dashed;border-color:rgba(183,154,255,.45)}
+.wd.plan:not(.on) i:after{content:"";width:6px;height:6px;border-radius:50%;background:var(--acc)}
+.prog-name{display:inline-flex;align-items:center;gap:4px;font-size:11px;color:#c9bff0;max-width:55%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.prog-name .ui-icon{width:13px;height:13px}
+.next.later{background:linear-gradient(135deg,#23213a,#1c1b2f);border-color:rgba(183,154,255,.16)}
+.next-hint{display:block;margin-top:12px;font-size:11px}
+.onbadge{display:inline-flex;align-items:center;gap:3px;margin-left:6px;padding:2px 8px;border-radius:999px;background:rgba(183,154,255,.16);color:var(--acc);font-size:10px;letter-spacing:.06em}.onbadge .ui-icon{width:11px;height:11px}
+.folder.isOn{padding:4px 12px 8px;border-radius:20px;border:1px solid rgba(183,154,255,.22);background:rgba(183,154,255,.04)}
 body:has(#rest.show) main{padding-bottom:200px}
 .confetti{position:fixed;inset:0;width:100%;height:100%;z-index:30;pointer-events:none}
 @media(max-width:380px){
@@ -392,7 +399,7 @@ body:has(#rest.show) main{padding-bottom:200px}
   <button class="btn wide" data-a="wheelDone">Listo</button></div></div>
 <script src="ejercicios.js"></script>
 <script>
-const VERSION = 39; // súbelo junto con C en sw.js
+const VERSION = 40; // súbelo junto con C en sw.js
 const MUSCLES =['Pecho','Espalda','Hombros','Brazos','Piernas','Core'];
 const RESTS = Array.from({ length: 41 }, (_, i) => i * 15); // 0 a 10 min, de 15 en 15 s
 const RING = 119.38; // perímetro del anillo de descanso (2π·19)
@@ -579,8 +586,8 @@ function pEntreno() {
         <button class="btn" data-a="startEmpty">+ Entreno libre</button></div></section>
       <div class="quick-actions"><button class="tile" data-a="newRoutine">${uiIcon('add')}<span>Nueva rutina</span></button><button class="tile" data-a="importStart">${uiIcon('down')}<span>Importar</span></button><button class="tile" data-a="newFolder">${uiIcon('folder')}<span>Carpeta</span></button></div>
       <div class="section-head"><h2>Mis rutinas</h2><small>${S.routines.length} en total</small></div>
-      ${S.folders.map(f => { const rs = S.routines.filter(r => r.folder === f.id); return `<div class="folder ${fresh === `folder:${f.id}` ? 'fresh' : ''}">
-        <div class="row between"><button class="fhead" data-a="folderToggle" data-id="${f.id}" aria-expanded="${!f.closed}">${f.closed ? '▸' : '▾'} ${esc(f.name)} <small>(${rs.length})</small></button>
+      ${[...S.folders].sort((x, y) => !!y.on - !!x.on).map(f => { const rs = S.routines.filter(r => r.folder === f.id).sort((x, y) => (dayOf(x) + 8) % 8 - (dayOf(y) + 8) % 8); return `<div class="folder ${f.on ? 'isOn' : ''} ${fresh === `folder:${f.id}` ? 'fresh' : ''}">
+        <div class="row between"><button class="fhead" data-a="folderToggle" data-id="${f.id}" aria-expanded="${!f.closed}">${f.closed ? '▸' : '▾'} ${esc(f.name)} <small>(${rs.length})</small>${f.on ? ` <span class="onbadge">${uiIcon('star')} Activo</span>` : ''}</button>
           <button class="icon dots" data-a="folderMenu" data-id="${f.id}" aria-label="Opciones de la carpeta">⋮</button></div>
         ${f.closed ? '' : rs.map(rCard).join('') || '<p class="muted">Carpeta vacía. Mueve rutinas aquí desde su menú ⋮.</p>'}</div>`; }).join('')}
       ${loose.length ? (S.folders.length ? `<div class="fhead">Mis rutinas <small>(${loose.length})</small></div>` : '') + loose.map(rCard).join('') : ''}
@@ -795,10 +802,25 @@ function streakWeeks() { // semanas seguidas con al menos un entreno (la actual 
   return n;
 }
 const lastDone = name => S.workouts.find(w => w.name === name)?.start || 0; // S.workouts va del más reciente al más antiguo
-function nextRoutine() { // la rutina que hace más tiempo que no haces (rotación); si no has hecho ninguna, la primera
-  const done = S.routines.filter(r => lastDone(r.name));
-  if (!done.length) return S.routines[0] || null;
-  return done.reduce((a, b) => lastDone(b.name) < lastDone(a.name) ? b : a);
+// Programa activo: una carpeta marcada con `on`. Sus rutinas son las que salen en Inicio.
+const activeFolder = () => S.folders.find(f => f.on) || null;
+const pool = () => { const f = activeFolder(); return f ? S.routines.filter(r => r.folder === f.id) : S.routines; };
+const DAYS = ['lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado', 'domingo']; // 0 = lunes
+const dayOf = r => DAYS.findIndex(d => new RegExp(`\\b${d}\\b`).test(norm(r.name)));
+const todayIdx = () => (new Date().getDay() + 6) % 7;
+const startOfDay = () => new Date().setHours(0, 0, 0, 0);
+// Si las rutinas llevan el día en el nombre ("Lunes · Torso"), toca la de hoy; si no, la que hace más tiempo que no haces.
+function nextRoutine() {
+  const list = pool(), dayed = list.filter(r => dayOf(r) >= 0), t = todayIdx();
+  if (dayed.length) {
+    const today = dayed.find(r => dayOf(r) === t);
+    if (today && lastDone(today.name) < startOfDay()) return { r: today, when: 'hoy' };
+    for (let k = 1; k <= 7; k++) { const d = (t + k) % 7, r = dayed.find(x => dayOf(x) === d);
+      if (r) return { r, when: k === 1 ? 'mañana' : 'el ' + ['lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado', 'domingo'][d], rest: !today, doneToday: !!today }; }
+  }
+  if (!list.length) return null;
+  const done = list.filter(r => lastDone(r.name));
+  return { r: done.length < list.length ? list.find(r => !lastDone(r.name)) : done.reduce((a, b) => lastDone(b.name) < lastDone(a.name) ? b : a), when: 'hoy' };
 }
 const ago = t => { const d = Math.round((new Date().setHours(0, 0, 0, 0) - new Date(t).setHours(0, 0, 0, 0)) / 864e5); return d <= 0 ? 'hoy' : d === 1 ? 'ayer' : `hace ${d} días`; };
 const delta = (a, b) => { if (!b) return a ? '<span class="dl up">nuevo</span>' : ''; const p = pct(a, b); return `<span class="dl ${p > 0 ? 'up' : p < 0 ? 'down' : ''}">${p > 0 ? '+' : ''}${p} %</span>`; };
@@ -808,27 +830,30 @@ function pInicio() {
   const span = (from, to) => S.workouts.filter(w => w.start > now - from * 864e5 && w.start <= now - to * 864e5);
   const week = span(7, 0), prev = span(14, 7), sum = (l, f) => l.reduce((t, w) => t + f(w), 0);
   const mon = monday(now), days = new Set(S.workouts.filter(w => w.start >= mon).map(w => (new Date(w.start).getDay() + 6) % 7)), todayI = (new Date().getDay() + 6) % 7;
-  const streak = streakWeeks(), a = S.active, r = !a && nextRoutine();
+  const streak = streakWeeks(), a = S.active, nx = !a && nextRoutine(), r = nx?.r, af = activeFolder();
+  const planned = new Set(pool().map(dayOf).filter(d => d >= 0));
+  const kicker = !nx ? '' : nx.when === 'hoy' ? 'HOY TOCA' : nx.doneToday ? `HOY HECHO · PRÓXIMA ${nx.when.toUpperCase()}` : `HOY DESCANSO · PRÓXIMA ${nx.when.toUpperCase()}`;
   const focus = a ? `<section class="next live tap" data-tab="entreno"><div class="next-top"><small class="home-kicker"><i class="livedot"></i>EN CURSO</small><b id="elapsed" class="next-time"></b></div>
       <h2>${esc(a.name)}</h2><div class="pbar"><i style="width:${setCount(a) ? doneCount(a) / setCount(a) * 100 : 0}%"></i></div>
       <div class="row between"><small>${doneCount(a)} de ${setCount(a)} series · ${fmtKg(vol(a))}</small><span class="btn sm">Continuar ${uiIcon('arrow')}</span></div></section>`
-    : r ? `<section class="next"><small class="home-kicker">TE TOCA</small><h2>${esc(r.name)}</h2>
+    : r ? `<section class="next ${nx.when === 'hoy' ? '' : 'later'}"><div class="next-top"><small class="home-kicker">${kicker}</small>${af ? `<small class="prog-name">${uiIcon('folder')} ${esc(af.name)}</small>` : ''}</div><h2>${esc(r.name)}</h2>
       <p>${r.items.length} ejercicios · ${r.items.reduce((t, it) => t + it.sets, 0)} series · ${lastDone(r.name) ? 'última vez ' + ago(lastDone(r.name)) : 'aún sin estrenar'}</p>
       <div class="next-ex">${r.items.slice(0, 4).map(it => thumb(ex(it.exId))).join('')}${r.items.length > 4 ? `<span class="thumb ph">+${r.items.length - 4}</span>` : ''}</div>
-      <div class="next-actions"><button class="btn" data-a="startRoutine" data-id="${r.id}">Empezar ${uiIcon('arrow')}</button><button class="btn ghost" data-tab="entreno">Otra rutina</button></div></section>`
+      <div class="next-actions"><button class="btn ${nx.when === 'hoy' ? '' : 'ghost'}" data-a="startRoutine" data-id="${r.id}">${nx.when === 'hoy' ? 'Empezar' : 'Adelantarla'} ${uiIcon('arrow')}</button><button class="btn ghost" data-tab="entreno">Otra rutina</button></div>
+      ${!af && S.folders.length ? `<small class="next-hint">Marca una carpeta como programa activo desde su menú ⋮ en Entrenamiento.</small>` : ''}</section>`
     : `<section class="next"><small class="home-kicker">PRIMER PASO</small><h2>Empieza tu primer entreno</h2><p>Crea una rutina o entrena libre y FORJA irá aprendiendo de tus series.</p>
       <div class="next-actions"><button class="btn" data-a="startEmpty">Entreno libre ${uiIcon('arrow')}</button><button class="btn ghost" data-a="newRoutine">Crear rutina</button></div></section>`;
   return ['Inicio', `
     <div class="greet"><div><small class="gdate">${new Date().toLocaleDateString('es', { weekday: 'long', day: 'numeric', month: 'long' })}</small>
       <h2>${h < 6 ? 'Buenas noches' : h < 14 ? 'Buenos días' : h < 21 ? 'Buenas tardes' : 'Buenas noches'}${name ? ', ' + esc(name) : ''}</h2></div>
       ${streak ? `<div class="streak" title="Semanas seguidas entrenando">${uiIcon('warm')}<b>${streak}</b><small>${streak === 1 ? 'semana' : 'semanas'}</small></div>` : ''}</div>
-    <div class="weekstrip">${['L', 'M', 'X', 'J', 'V', 'S', 'D'].map((d, i) => `<div class="wd ${days.has(i) ? 'on' : ''} ${i === todayI ? 'today' : ''} ${i > todayI ? 'later' : ''}"><small>${d}</small><i>${days.has(i) ? uiIcon('check') : ''}</i></div>`).join('')}</div>
+    <div class="weekstrip">${['L', 'M', 'X', 'J', 'V', 'S', 'D'].map((d, i) => `<div class="wd ${days.has(i) ? 'on' : ''} ${planned.has(i) ? 'plan' : ''} ${i === todayI ? 'today' : ''} ${i > todayI ? 'later' : ''}"><small>${d}</small><i>${days.has(i) ? uiIcon('check') : ''}</i></div>`).join('')}</div>
     ${focus}
     <div class="kpis"><div><small>Entrenos</small><b>${week.length}</b>${delta(week.length, prev.length)}</div>
       <div><small>Series</small><b>${fmt(sum(week, nsets))}</b>${delta(sum(week, nsets), sum(prev, nsets))}</div>
       <div><small>Volumen</small><b>${(sum(week, vol) / 1000).toLocaleString('es', { maximumFractionDigits: 1 })} t</b>${delta(sum(week, vol), sum(prev, vol))}</div></div>
     <small class="kpi-note">Últimos 7 días comparado con los 7 anteriores</small>
-    <div class="section-head"><h2>Actividad reciente</h2>${S.workouts.length ? `<small>${S.workouts.length} sesiones</small>` : ''}</div>
+    <div class="section-head"><h2>Actividad reciente</h2>${S.workouts.length ? `<small>${S.workouts.length} ${S.workouts.length === 1 ? "sesión" : "sesiones"}</small>` : ''}</div>
     ${S.workouts.map(w => feedCard(w, prs[w.id])).join('')
       || `<div class="home-empty"><span class="empty-mark" aria-hidden="true">${uiIcon('arrow')}</span><div><b>Tu historial empieza aquí</b><p>Cuando termines un entreno, lo verás aparecer en esta lista.</p></div></div>`}`];
 }
@@ -1584,6 +1609,9 @@ const MENU = {
   rMoveNew: async d => { const f = await newFolder(); if (f) MENU.rMoveTo({ id: d.id, f: f.id }); },
   rDel: d => openMenu(`¿Eliminar «${S.routines.find(x => x.id === d.id).name}»?`, mItem('trash', 'Eliminar rutina', 'rDelYes', `data-id="${d.id}"`, 'danger') + mItem('redo', 'Cancelar', 'done')),
   rDelYes: d => { gone('r:' + d.id); S.routines = S.routines.filter(r => r.id !== d.id); save(); render(); toast('Rutina eliminada'); },
+  fActive: d => { const f = S.folders.find(x => x.id === d.id); if (!f) return; const on = !f.on;
+    S.folders.forEach(x => { if (x.on || x === f) { x.on = x === f && on; x.u = Date.now(); } }); save();
+    smooth(render); toast(on ? `«${f.name}» es tu programa activo` : 'Sin programa activo'); },
   fRename: async d => { const f = S.folders.find(x => x.id === d.id); if (!f) return; const n = await textForja('Renombrar carpeta', 'Elige un nombre fácil de reconocer.', { label: 'Nombre de la carpeta', value: f.name, icon: 'edit', accept: 'Guardar' }); if (n) { f.name = n; f.u = Date.now(); save(); smooth(render); } },
   fDel: d => { gone('f:' + d.id); S.folders = S.folders.filter(f => f.id !== d.id); S.routines.forEach(r => { if (r.folder === d.id) delete r.folder; }); save(); render(); toast('Carpeta eliminada; sus rutinas siguen en Mis rutinas'); },
   discardAsk: () => openMenu('¿Seguro que quieres descartar el entrenamiento?', `<p class="muted">Se perderán todas las series de este entreno.</p>`
@@ -1741,7 +1769,7 @@ const A = {
   newFolder: async () => { if (await newFolder()) smooth(render); },
   folderToggle: d => { const f = S.folders.find(x => x.id === d.id); f.closed = !f.closed; f.u = Date.now(); save(); smooth(render); },
   folderMenu: d => { const f = S.folders.find(x => x.id === d.id), a = `data-id="${d.id}"`;
-    openMenu(f.name, mItem('edit', 'Renombrar carpeta', 'fRename', a) + mItem('trash', 'Eliminar carpeta', 'fDel', a, 'danger')); },
+    openMenu(f.name, mItem(f.on ? 'x' : 'star', f.on ? 'Dejar de usar como programa activo' : 'Usar como programa activo', 'fActive', a) + mItem('edit', 'Renombrar carpeta', 'fRename', a) + mItem('trash', 'Eliminar carpeta', 'fDel', a, 'danger')); },
   routineMenu: d => { const r = S.routines.find(x => x.id === d.id), a = `data-id="${d.id}"`;
     openMenu(r.name, mItem('edit', 'Editar rutina', 'rEdit', a) + mItem('duplicate', 'Duplicar rutina', 'rDup', a) + mItem('folder', 'Mover a carpeta', 'rMove', a)
       + mItem('trash', 'Eliminar rutina', 'rDel', a, 'danger')); },
