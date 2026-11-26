@@ -113,26 +113,6 @@ const FIG3D = (() => {
     eqGroup = new THREE.Group(); scene.add(eqGroup);
     fig = gltf.scene;
     fig.updateMatrixWorld(true);
-    // El esqueleto viene en "T" y la malla en "A": llevar cada hueso a la articulación real de la malla y volver a enlazar.
-    {
-      let main = null; fig.traverse(o => { if (o.isSkinnedMesh && (!main || o.geometry.attributes.position.count > main.geometry.attributes.position.count)) main = o; });
-      const g = main.geometry, pos = g.attributes.position, si = g.attributes.skinIndex, sw = g.attributes.skinWeight, bones = main.skeleton.bones;
-      const idx = n => bones.findIndex(b => b.name === 'mixamorig' + n), v = V3(0, 0, 0);
-      const joint = (a, b) => { const ia = idx(a), ib = idx(b), acc = V3(0, 0, 0); let n = 0;
-        for (let i = 0; i < pos.count; i++) { let wa = 0, wb = 0; const is = [si.getX(i), si.getY(i), si.getZ(i), si.getW(i)], ws = [sw.getX(i), sw.getY(i), sw.getZ(i), sw.getW(i)];
-          for (let k = 0; k < 4; k++) { if (is[k] === ia) wa += ws[k]; if (is[k] === ib) wb += ws[k]; }
-          if (wa > .3 && wb > .3) { acc.add(v.fromBufferAttribute(pos, i).applyMatrix4(main.matrixWorld)); n++; } }
-        return n ? acc.divideScalar(n) : null; };
-      const fix = (bone, child, target) => { if (!target) return; const Bn = bones[idx(bone)], Cn = bones[idx(child)];
-        Bn.updateMatrixWorld(true); const a = Bn.getWorldPosition(V3()), cur = Cn.getWorldPosition(V3()).sub(a).normalize(), q = new THREE.Quaternion().setFromUnitVectors(cur, target.clone().sub(a).normalize());
-        const w = Bn.getWorldQuaternion(new THREE.Quaternion()), pq = Bn.parent.getWorldQuaternion(new THREE.Quaternion()); Bn.quaternion.copy(pq.invert().multiply(q.multiply(w))); Bn.updateMatrixWorld(true); };
-      for (const s of ['Left', 'Right']) {
-        fix(s + 'Arm', s + 'ForeArm', joint(s + 'Arm', s + 'ForeArm')); fix(s + 'ForeArm', s + 'Hand', joint(s + 'ForeArm', s + 'Hand'));
-        fix(s + 'UpLeg', s + 'Leg', joint(s + 'UpLeg', s + 'Leg')); fix(s + 'Leg', s + 'Foot', joint(s + 'Leg', s + 'Foot'));
-      }
-      fig.updateMatrixWorld(true);
-      fig.traverse(o => { if (o.isSkinnedMesh) { o.skeleton.calculateInverses(); o.bind(o.skeleton, o.matrixWorld); } });
-    }
     fig.rotation.y = Math.PI / 2; // mira a +x
     fig.traverse(o => {
       if (o.isSkinnedMesh || o.isMesh) {
@@ -142,16 +122,6 @@ const FIG3D = (() => {
       if (o.isBone) { B[o.name.replace('mixamorig', '')] = o; REST.set(o, o.quaternion.clone()); }
     });
     fig.traverse(o => { if (o.isMesh) o.material = o === body ? mats.skin : /short/i.test(o.name) ? mats.shorts : mats.eyes; });
-    // cabeza: unida al hueso de la cabeza (se mueve con él)
-    {
-      fig.updateMatrixWorld(true);
-      const gp = n => B[n].getWorldPosition(V3());
-      const u = (gp('RightUpLeg').distanceTo(gp('RightLeg')) + gp('RightLeg').distanceTo(gp('RightFoot'))) / 92; // unidades del modelo por cm (pierna ≈ 92 cm)
-      const head = new THREE.Mesh(tube(HEAD.map(r => r.map((x, i) => i === 1 ? x * u : x * u))), mats.head);
-      const nose = new THREE.Mesh(G.sphere, mats.head); nose.position.set(9.3 * u, 4.2 * u, 0); nose.scale.set(1.1 * u, 2.6 * u, .9 * u); head.add(nose);
-      head.castShadow = head.receiveShadow = nose.castShadow = true;
-      head.position.copy(B.Head.getWorldPosition(V3())); scene.add(head); head.updateMatrixWorld(true); B.Head.attach(head);
-    }
     fistAxes();
     REGION = regions(body);
     colors = new THREE.Float32BufferAttribute(new Float32Array(REGION.length * 3), 3); body.geometry.setAttribute('color', colors); paint(new Set());
@@ -181,28 +151,21 @@ const FIG3D = (() => {
     const v = W(b).sub(W(a)), s = Math.min(1, v.length() / len), d = V3(v.x, v.y, 0);
     if (d.lengthSq() < 1e-6) d.set(0, -1, 0); d.normalize().multiplyScalar(s); d.z = side * Math.sqrt(Math.max(0, 1 - s * s)) + side * .12; return d;
   }
-  // Puños cerrados: cada falange gira sobre su eje (ángulo y eje se ajustan en FIST).
-  const FIST = { sign: 1, a: 1.4, thumb: .45 };
-  const _f = new THREE.Quaternion();
-  const CURL = new Map(); // hueso del dedo → eje de flexión (en su sistema local), calculado en reposo
+  // Puños cerrados: tres falanges para los cuatro dedos y tres para el pulgar; giran hacia la palma (en reposo mira hacia abajo).
+  const CURL = new Map(), _f = new THREE.Quaternion();
+  const FIST = { HandIndex1: 80, HandIndex2: 85, HandIndex3: 55, HandThumb1: 10, HandThumb2: 35, HandThumb3: 25 };
   function fistAxes() {
     fig.updateMatrixWorld(true);
-    const gp = n => B[n].getWorldPosition(V3());
-    for (const s of ['Left', 'Right']) {
-      const across = gp(s + 'HandPinky1').sub(gp(s + 'HandIndex1')), fwd = gp(s + 'HandMiddle1').sub(gp(s + 'Hand'));
-      const palm = new THREE.Vector3().crossVectors(across, fwd).normalize().multiplyScalar(s === 'Left' ? 1 : -1);
-      for (const f of ['Index', 'Middle', 'Ring', 'Pinky', 'Thumb']) for (let k = 1; k <= 3; k++) {
-        const b = B[s + 'Hand' + f + k], c = B[s + 'Hand' + f + (k + 1)] || null; if (!b) continue;
-        const dir = (c ? c.getWorldPosition(V3()) : b.getWorldPosition(V3()).add(fwd)).sub(b.getWorldPosition(V3())).normalize();
-        const ax = new THREE.Vector3().crossVectors(dir, f === 'Thumb' ? fwd.clone().normalize() : palm).normalize();
-        CURL.set(b, ax.applyQuaternion(b.getWorldQuaternion(new THREE.Quaternion()).invert()));
-      }
+    const palm = V3(0, -1, 0);
+    for (const s of ['Left', 'Right']) for (const [n, deg] of Object.entries(FIST)) {
+      const b = B[s + n]; if (!b) continue;
+      const next = B[s + n.replace(/\d$/, d => +d + 1)], prev = B[s + n.replace(/\d$/, d => +d - 1)] || B[s + 'Hand'];
+      const p0 = b.getWorldPosition(V3()), dir = next ? next.getWorldPosition(V3()).sub(p0) : p0.clone().sub(prev.getWorldPosition(V3()));
+      const ax = new THREE.Vector3().crossVectors(dir.normalize(), palm).normalize();
+      CURL.set(b, [ax.applyQuaternion(b.getWorldQuaternion(new THREE.Quaternion()).invert()), deg * Math.PI / 180]);
     }
   }
-  function fists() {
-    for (const [b, ax] of CURL) { const thumb = /Thumb/.test(b.name), k = +b.name.slice(-1);
-      b.quaternion.multiply(_f.setFromAxisAngle(ax, FIST.sign * (thumb ? FIST.thumb : FIST.a) * (k === 1 ? .85 : 1))); }
-  }
+  function fists() { for (const [b, [ax, ang]] of CURL) b.quaternion.multiply(_f.setFromAxisAngle(ax, ang)); }
   function placeBody(P) {
     for (const [b, q] of REST) b.quaternion.copy(q);
     fists();
