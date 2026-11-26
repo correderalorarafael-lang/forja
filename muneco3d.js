@@ -216,6 +216,17 @@ const FIG3D = (() => {
     }
   }
   const bonePos = n => B[n].getWorldPosition(V3());
+  // Volumen aproximado del cuerpo (esferas a lo largo de los huesos) para que las máquinas no lo atraviesen.
+  function bodySpheres() {
+    const S = [], seg = (a, b, r, n) => { const A = bonePos(a), Bb = bonePos(b); for (let i = 0; i <= n; i++) S.push([A.clone().lerp(Bb, i / n), r]); };
+    seg('Hips', 'Spine2', 17, 5); seg('Spine2', 'Neck', 17, 3); S.push([bonePos('Hips'), 18]);
+    const hd = bonePos('Head'), up = hd.clone().sub(bonePos('Neck')).normalize(); S.push([hd.clone().addScaledVector(up, 12), 14]);
+    for (const s of ['Left', 'Right']) {
+      seg(s + 'Arm', s + 'ForeArm', 7.5, 4); // antebrazos y manos no cuentan: suelen apoyarse o agarrar
+      seg(s + 'UpLeg', s + 'Leg', 11, 5); seg(s + 'Leg', s + 'Foot', 8, 5); seg(s + 'Foot', s + 'ToeBase', 5.5, 2);
+    }
+    return S;
+  }
 
   // --- material del gimnasio (a partir de la lista de muneco.js) ---
   function mesh(geo, mat, pos, scale, quat) { const m = new THREE.Mesh(geo, mat); m.position.copy(pos); m.scale.copy(scale); if (quat) m.quaternion.copy(quat); m.castShadow = true; m.receiveShadow = true; eqGroup.add(m); return m; }
@@ -230,16 +241,17 @@ const FIG3D = (() => {
     const sameHands = !F && Math.hypot(P.J.han[0] - P.J.han2[0], P.J.han[1] - P.J.han2[1]) < 6;
     const at2 = (p, z) => { const v = w(p); if (!F) v.z = z; return v; };
     const hands = () => F ? (P.one ? [hand(false)] : [hand(true), hand(false)]) : sameHands ? [hand(true), hand(false)] : [hand(true)];
+    const solids = [];
     for (const o of P.eq) {
-      if (o.k === 'box') { const c = w([o.x + o.w / 2, o.y + o.h / 2]); mesh(G.box, mats.pad, c, F ? V3(44, o.h, o.w) : V3(o.w, o.h, 38)); }
+      if (o.k === 'box') { const c = w([o.x + o.w / 2, o.y + o.h / 2]); solids.push({ pos: c, size: F ? V3(44, o.h, o.w) : V3(o.w, o.h, 38), q: new THREE.Quaternion(), legs: o.legs ?? 4, push: o.push }); }
       else if (o.k === 'pad') { const a = w(o.a), b = w(o.b), d = b.clone().sub(a), q = new THREE.Quaternion().setFromUnitVectors(V3(1, 0, 0), d.clone().normalize());
-        mesh(G.box, mats.pad, a.clone().add(b).multiplyScalar(.5), V3(d.length() + o.w, o.w, 36), q); }
+        solids.push({ pos: a.clone().add(b).multiplyScalar(.5), size: V3(d.length() + o.w, o.w, 36), q, legs: o.legs ?? 1, push: o.push, legAt: o.legAt }); }
       else if (o.k === 'bar') {
         const mat = o.metal ? mats.metal : mats.frame, r = o.w / 2;
         if (o.z === 'sides') for (const z of [-28, 28]) rod(at2(o.a, z), at2(o.b, z), r, mat);
         else if (o.z === 'across') { const c = w([(o.a[0] + o.b[0]) / 2, o.a[1]]); rod(V3(c.x, c.y, -64), V3(c.x, c.y, 64), r, mat); for (const z of [-64, 64]) rod(V3(c.x, c.y, z), V3(c.x, 0, z), 3.5, mats.frame); }
         else if (F) rod(w(o.a), w(o.b), r, mat);
-        else if (Math.abs(o.a[0] - o.b[0]) < 1 && o.b[1] >= FIG.FLOOR - 1) for (const z of [-15, 15]) rod(at2(o.a, z), at2(o.b, z), r, mat);
+        else if (Math.abs(o.a[0] - o.b[0]) < 1 && o.b[1] >= FIG.FLOOR - 1) { if (o.b[1] - o.a[1] > 120) for (const z of [-15, 15]) rod(at2(o.a, z), at2(o.b, z), r, mat); } // patas cortas: se ponen solas bajo cada pieza
         else rod(at2(o.a, 0), at2(o.b, 0), r, mat);
       }
       else if (o.k === 'barbell') { // barra cruzada (con las dos manos) y un disco a cada lado
@@ -258,13 +270,49 @@ const FIG3D = (() => {
         const h = hs.reduce((a, b) => a.distanceTo(h0) < b.distanceTo(h0) ? a : b), q = F ? q0 : V3(q0.x, q0.y, h.z);
         rod(h, q, .9, mats.cable); mesh(G.sphere, mats.acc, q, V3(4.5, 4.5, 4.5));
       }
-      else if (o.k === 'roller') { const c = w(o.p); rod(V3(c.x, c.y, -24), V3(c.x, c.y, 24), 8, mats.pad); }
+      else if (o.k === 'roller') { const c = w(o.p); solids.push({ pos: c, size: V3(16, 16, 48), q: new THREE.Quaternion(), roller: 1 }); }
       else if (o.k === 'wheel') { const c = w(o.p); disc(c, 10, 6); rod(V3(c.x, c.y, -14), V3(c.x, c.y, 14), 1.6, mats.metal); }
       else if (o.k === 'kpad') for (const [s_, z] of [['Right', 1], ['Left', -1]]) { // almohadillas de la máquina de abductores/aductores
         const kn = bonePos(s_ + 'Leg'), c = kn.clone().add(V3(-2, 0, z * (o.side === 'out' ? 10 : -10)));
-        mesh(G.box, mats.pad, c, V3(16, 22, 5)); rod(c.clone().add(V3(0, -11, 0)), V3(c.x, 0, c.z), 2, mats.frame); }
-      else if (o.k === 'back') { const h = bonePos('Hips'), s2 = bonePos('Spine2'); mesh(G.box, mats.pad, h.clone().lerp(s2, .55).add(V3(-14, 0, 0)), V3(6, 60, 44)); }
-      else if (o.k === 'sled') { const c = w(o.p), q = new THREE.Quaternion().setFromAxisAngle(Z, 38 * Math.PI / 180); mesh(G.box, mats.pad, c, V3(12, 56, 54), q); }
+        solids.push({ pos: c, size: V3(16, 22, 5), q: new THREE.Quaternion(), legs: 1, thin: 2, dir: z * (o.side === 'out' ? 1 : -1) }); }
+      else if (o.k === 'armpad') { // atril del curl predicador: justo debajo de los brazos
+        const A = bonePos('RightArm'), E = bonePos('RightForeArm'), d = E.clone().sub(A); d.z = 0; const len = d.length(); d.normalize();
+        const n = V3(d.y, -d.x, 0); if (n.y > 0) n.negate();
+        const ch = bonePos('Spine2').x + 18, c = E.clone().addScaledVector(n, 11).addScaledVector(d, -6); c.z = 0; c.x = Math.max(c.x, ch + len * .4); const q = new THREE.Quaternion().setFromUnitVectors(V3(1, 0, 0), d);
+        mesh(G.box, mats.pad, c, V3(len * .8, 10, 48), q);
+        const foot = c.clone().addScaledVector(d, len * .35).addScaledVector(n, 5); rod(foot, V3(foot.x, 0, 0), 3, mats.frame); }
+      else if (o.k === 'back') { const h = bonePos('Hips'), s2 = bonePos('Spine2'); solids.push({ pos: h.clone().lerp(s2, .55).add(V3(-14, 0, 0)), size: V3(6, 60, 44), q: new THREE.Quaternion(), legs: 1 }); }
+      else if (o.k === 'sled') { const c = w(o.p), q = new THREE.Quaternion().setFromAxisAngle(Z, 38 * Math.PI / 180); solids.push({ pos: c, size: V3(12, 56, 54), q }); }
+    }
+    // Cada pieza se aparta del cuerpo (por su lado más fino) hasta no atravesarlo; luego se le ponen patas hasta el suelo.
+    const SPH = bodySpheres();
+    for (const sd of solids) {
+      const inv = sd.q.clone().invert(), hs = sd.size.clone().multiplyScalar(.5);
+      const pen = () => { let wd = 0, wl = null;
+        for (const [p, r] of SPH) {
+          const l = p.clone().sub(sd.pos).applyQuaternion(inv);
+          const cl = V3(Math.max(-hs.x, Math.min(hs.x, l.x)), Math.max(-hs.y, Math.min(hs.y, l.y)), Math.max(-hs.z, Math.min(hs.z, l.z)));
+          const d = l.distanceTo(cl), depth = d > 0 ? r - d : r + Math.min(hs.x - Math.abs(l.x), hs.y - Math.abs(l.y), hs.z - Math.abs(l.z));
+          if (depth > wd) { wd = depth; wl = l; } }
+        return [wd, wl]; };
+      let [d, wl] = pen(); if (d <= 0) continue;
+      let dir;
+      if (sd.push) dir = V3(sd.push[0], -sd.push[1], 0).normalize();
+      else if (sd.roller) { dir = V3(-wl.x, -wl.y, 0); if (dir.lengthSq() < 1e-6) dir.set(0, -1, 0); dir.normalize(); }
+      else {
+        const ax = sd.thin ?? (hs.x <= hs.y && hs.x <= hs.z ? 0 : hs.y <= hs.z ? 1 : 2), e = [V3(1, 0, 0), V3(0, 1, 0), V3(0, 0, 1)][ax];
+        const sign = sd.dir ?? -Math.sign([wl.x, wl.y, wl.z][ax] || 1); dir = e.multiplyScalar(sign).applyQuaternion(sd.q);
+      }
+      for (let k = 0; k < 80 && d > 0; k++) { sd.pos.addScaledVector(dir, 1); [d] = pen(); }
+    }
+    for (const sd of solids) {
+      if (sd.roller) { rod(sd.pos.clone().add(V3(0, 0, -24)), sd.pos.clone().add(V3(0, 0, 24)), 8, mats.pad); continue; }
+      mesh(G.box, mats.pad, sd.pos, sd.size, sd.q);
+      const hs = sd.size.clone().multiplyScalar(.5), low = sd.pos.y - Math.abs(hs.clone().applyQuaternion(sd.q).y) * 0 - hs.y;
+      if (!sd.legs || low < 6) continue;
+      if (sd.legs === 4 && sd.q.equals(new THREE.Quaternion())) for (const sx of [-1, 1]) for (const sz of [-1, 1]) {
+        const c = V3(sd.pos.x + sx * Math.max(0, hs.x - 7), sd.pos.y - hs.y, sd.pos.z + sz * Math.max(0, hs.z - 6)); rod(c, V3(c.x, 0, c.z), 2.6, mats.frame); }
+      else { const c = sd.pos.clone().add(V3(sd.legAt === 'b' ? hs.x - 4 : 0, -hs.y, 0).applyQuaternion(sd.q)); rod(c, V3(c.x, 0, c.z), 3, mats.frame); }
     }
   }
 

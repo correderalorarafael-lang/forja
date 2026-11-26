@@ -145,7 +145,8 @@ const FIG = (() => {
   const sled = p => sink ? put({ k: 'sled', p }) : `<rect x="-6" y="-26" width="14" height="56" rx="4" fill="${M.pad}" stroke="${M.padHi}" stroke-width="1.2" transform="translate(${P(p)}) rotate(-38)"/>`;
   const kpad = side => sink ? put({ k: 'kpad', side }) : '';
   const back = () => sink ? put({ k: 'back' }) : '';
-  const rect = (x, y, w, h, r = 5, f = M.pad) => sink ? put({ k: 'box', x, y, w, h }) : `<rect x="${r1(x)}" y="${r1(y)}" width="${r1(w)}" height="${r1(h)}" rx="${r}" fill="${f}" stroke="${M.padHi}" stroke-width="1.2"/>`;
+  const armpad = () => sink ? put({ k: 'armpad' }) : '';
+  const rect = (x, y, w, h, r = 5, f = M.pad, opt = {}) => sink ? put({ k: 'box', x, y, w, h, ...opt }) : `<rect x="${r1(x)}" y="${r1(y)}" width="${r1(w)}" height="${r1(h)}" rx="${r}" fill="${f}" stroke="${M.padHi}" stroke-width="1.2"/>`;
   const bar = (a, b, w = 4, c = M.metal, z) => sink ? put({ k: 'bar', a, b, w, metal: c === M.metal || c === M.cable, z }) : `<path d="M${P(a)}L${P(b)}" stroke="${c}" stroke-width="${w}" stroke-linecap="round"/>`;
   const plate = (p, r = 15) => sink ? put({ k: 'barbell', p, r }) : `<circle cx="${r1(p[0])}" cy="${r1(p[1])}" r="${r}" fill="${M.plate}" stroke="${M.acc}" stroke-width="2"/><circle cx="${r1(p[0])}" cy="${r1(p[1])}" r="${r * .32}" fill="${M.metal}"/>`;
   const db = p => sink ? put({ k: 'db', p }) : plate(p, 8.5);
@@ -156,7 +157,7 @@ const FIG = (() => {
   const tower = x => bar([x, 18], [x, FLOOR], 7, '#2c2b45');
   const legs4 = (x1, x2, y) => bar([x1 + 8, y], [x1 + 8, FLOOR], 5, '#2c2b45') + bar([x2 - 8, y], [x2 - 8, FLOOR], 5, '#2c2b45');
   const flatBench = (x1, x2, y = 204) => legs4(x1, x2, y + 10) + rect(x1, y, x2 - x1, 12);
-  const pad2 = (a, b, w = 12) => sink ? put({ k: 'pad', a, b, w }) : `<path d="M${P(a)}L${P(b)}" stroke="${M.padHi}" stroke-width="${w + 2.4}" stroke-linecap="round"/><path d="M${P(a)}L${P(b)}" stroke="${M.pad}" stroke-width="${w}" stroke-linecap="round"/>`;
+  const pad2 = (a, b, w = 12, opt = {}) => sink ? put({ k: 'pad', a, b, w, ...opt }) : `<path d="M${P(a)}L${P(b)}" stroke="${M.padHi}" stroke-width="${w + 2.4}" stroke-linecap="round"/><path d="M${P(a)}L${P(b)}" stroke="${M.pad}" stroke-width="${w}" stroke-linecap="round"/>`;
   const seat = (x, y, w = 60) => bar([x + w / 2, y + 8], [x + w / 2, FLOOR], 6, '#2c2b45') + rect(x, y, w, 12);
   const off = (p, dx, dy) => [p[0] + dx, p[1] + dy];
 
@@ -210,8 +211,8 @@ const FIG = (() => {
       bg: () => tower(345), fg: J => cable(J.han, [345, 96]) + handle(J.han) },
     curl: { an: stand, A: { t: 180, ua: 2, fa: 2 }, B: { t: 182, ua: 8, fa: 146 },
       fg: (J, eq) => eq === 'hammer' ? dbAxis(J.elb, J.han) : eq === 'bar' ? plate(J.han, 13) : eq === 'cable' ? cable(J.han, [258, 250]) + handle(J.han) : db(J.han), bg: (J, eq) => eq === 'cable' ? tower(258) : '' },
-    preacher: { an: ['hip', 192, 196], A: { t: 186, ua: 42, fa: 46, th: 88, sh: -3 }, B: { t: 186, ua: 42, fa: 158, th: 88, sh: -3 },
-      bg: J => seat(160, 207, 56) + pad2(off(J.sho, 16, 10), off(J.elb, 8, 12), 12) + bar(off(J.elb, 4, 18), [J.elb[0] + 4, FLOOR], 6, '#2c2b45'), fg: J => plate(J.han, 13) },
+    preacher: { an: ['hip', 192, 196], A: { t: 176, ua: 64, fa: 70, th: 88, sh: -3 }, B: { t: 176, ua: 64, fa: 165, th: 88, sh: -3 },
+      bg: J => seat(160, 207, 56) + armpad() + bar(off(J.elb, 4, 18), [J.elb[0] + 4, FLOOR], 6, '#2c2b45'), fg: J => plate(J.han, 13) },
     inclineCurl: { an: ['hip', 230, 198], A: { t: -152, ua: -2, fa: -2, th: 76, sh: 12 }, B: { t: -152, ua: -2, fa: 128, th: 76, sh: 12 },
       bg: J => legs4(186, 270, 220) + pad2(off(J.hip, -6, 18), off(J.sho, -12, 12), 13) + rect(208, 212, 66, 12), fg: J => db(J.han) },
     bayesian: { an: stand, A: { t: 172, ua: -36, fa: -38, ua2: 2, fa2: 0 }, B: { t: 172, ua: -26, fa: 112, ua2: 2, fa2: 0 },
@@ -260,7 +261,7 @@ const FIG = (() => {
     calfStanding: { an: ['toe', 232, 246], A: { ...std, ua: -30, fa: 160, ft: 84 }, B: { t: 180, ua: -30, fa: 160, th: 0, sh: 0, ft: 42 },
       bg: () => rect(200, 248, 60, 12, 3) + bar([150, 40], [150, FLOOR], 7, '#2c2b45'), fg: J => rect(J.sho[0] - 26, J.sho[1] - 14, 34, 12, 6) },
     calfSeated: { an: ['toe', 268, 246], A: { t: 184, ua: 40, fa: 90, th: 88, sh: 0, ft: 80 }, B: { t: 184, ua: 40, fa: 90, th: 88, sh: 0, ft: 40 },
-      bg: J => seat(J.hip[0] - 30, J.hip[1] + 11, 52) + rect(232, 248, 60, 12, 3), fg: J => rect(J.kne[0] - 20, J.kne[1] - 24, 34, 12, 6) },
+      bg: J => seat(J.hip[0] - 30, J.hip[1] + 11, 52) + rect(232, 248, 60, 12, 3), fg: J => rect(J.kne[0] - 20, J.kne[1] - 24, 34, 12, 6, M.pad, { push: [0, -1], legs: 0 }) },
     plank: { an: ['toe', 92, 259], A: { t: 100, th: -80, sh: -80, ft: -6, hT: [262, 255], hb: -1 }, B: { t: 101.5, th: -78.5, sh: -78.5, ft: -6, hT: [262, 255], hb: -1 } },
     crunch: { an: ['hip', 236, 240], A: { t: -92, ua: 96, fa: 98, th: 134, sh: 18, h: -4, fT: [298, 250], fT2: [298, 250], fb: -1, fb2: -1 }, B: { t: -116, ua: 122, fa: 120, th: 134, sh: 18, h: -18, fT: [298, 250], fT2: [298, 250], fb: -1, fb2: -1 } },
     cableCrunch: { an: ['kne', 196, 250], A: { t: 176, ua: 160, fa: 20, th: 0, sh: -90, ft: -10 }, B: { t: 92, ua: 100, fa: -30, th: 0, sh: -90, ft: -10 },
