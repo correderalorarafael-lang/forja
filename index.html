@@ -132,6 +132,8 @@ nav button b{display:block;font-size:20px}nav button.on{color:var(--acc)}
 .ro-row{position:absolute;left:0;right:0;height:50px;display:flex;align-items:center;gap:12px;padding:0 14px;background:var(--card);border:1px solid var(--line);border-radius:14px;font-weight:600;transition:transform .2s cubic-bezier(.2,.9,.25,1)}
 .ro-row.lift{transition:none;z-index:2;border-color:var(--acc);box-shadow:0 12px 28px rgba(0,0,0,.5)}
 .demo{position:relative;aspect-ratio:4/3;background:#fff;border-radius:16px;overflow:hidden;margin:10px 0}
+.demo.fig{background:radial-gradient(ellipse at 50% 38%,#34305a,#1a1930 70%);border:1px solid rgba(183,154,255,.14)}.demo .fig3d,.demo .figdemo{position:absolute;inset:0;width:100%;height:100%}
+.thumb.fig{background:radial-gradient(circle at 50% 40%,#3a3560,#211f36);object-fit:cover}
 .demo img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain}
 .demo img+img{animation:swap 2.6s ease-in-out infinite}
 @keyframes swap{0%,35%{opacity:0}50%,85%{opacity:1}100%{opacity:0}}
@@ -412,9 +414,11 @@ body:has(#rest.show) main{padding-bottom:200px}
   <h3>Temporizador de descanso</h3><small id="wheelEx"></small>
   <div class="wheel"><div class="wsel"></div><div class="wlist" id="wlist" tabindex="0"></div></div>
   <button class="btn wide" data-a="wheelDone">Listo</button></div></div>
-<script src="ejercicios.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+<script src="ejercicios.js"></script><script src="muneco.js"></script><script src="muneco3d.js"></script>
 <script>
-const VERSION = 42; // súbelo junto con C en sw.js
+const VERSION = 43; // súbelo junto con C en sw.js
 const MUSCLES =['Pecho','Espalda','Hombros','Brazos','Piernas','Core'];
 const RESTS = Array.from({ length: 41 }, (_, i) => i * 15); // 0 a 10 min, de 15 en 15 s
 const RING = 119.38; // perímetro del anillo de descanso (2π·19)
@@ -648,7 +652,9 @@ function exCard(it, i) {
   </div>`;
 }
 // Sin carga diferida: al re-pintar (p. ej. al marcar ✓) la foto sale al instante desde la caché, sin parpadeo.
-const thumb = e => e.img ? `<img class="thumb" src="img/${e.id}-0.jpg" alt="" decoding="sync">` : `<span class="thumb ph">${esc((e.name || '?')[0])}</span>`;
+// Miniatura: el muñeco 3D en la postura del ejercicio (mientras se dibuja, el muñeco plano); sin plantilla, la inicial.
+const thumb = e => { const u = (FIG3D.ok && FIG3D.thumb(e)) || FIG.thumbUrl(e.name);
+  return u ? `<img class="thumb fig" data-t3="${esc(e.name)}" src="${u}" alt="" decoding="sync">` : `<span class="thumb ph">${esc((e.name || '?')[0])}</span>`; };
 const restTxt = s => !s ? 'sin descanso' : s < 60 ? `${s} s` : `${Math.floor(s / 60)} min${s % 60 ? ` ${s % 60} s` : ''}`;
 // mode: 'restStep' = ejercicio del entreno en curso, 'rtRest' = ejercicio del editor de rutinas
 const restStepper = (mode, i, v) => `<button class="restchip" data-a="restPick" data-m="${mode}" data-i="${i}">${uiIcon('timer')} Descanso: <b>${v ? restTxt(v) : 'sin descanso'}</b></button>`;
@@ -1102,7 +1108,7 @@ function pEjercicio() {
   const custom = S.custom.some(c => c.id === e.id);
   return [e.name, `
     <input class="note" data-note="${e.id}" value="${esc(S.notes[e.id] || '')}" placeholder="Tu nota para este ejercicio (asiento, agarre…)">
-    ${e.img ? `<div class="demo"><img src="img/${e.id}-0.jpg" alt=""><img src="img/${e.id}-1.jpg" alt="Demostración de ${esc(e.name)}"></div>` : ''}
+    ${FIG.pick(e.name) ? `<div class="demo fig" role="img" aria-label="Animación de ${esc(e.name)}">${FIG3D.ok ? FIG3D.demo(e) : FIG.demo(e.name)}</div>` : ''}
     ${e.how ? `<div class="card"><h3>Qué trabaja</h3><div class="tags">${e.main.map(m => `<span class="tag main">${esc(m)}</span>`).join('')}${e.sec.map(m => `<span class="tag">${esc(m)}</span>`).join('')}</div></div>
     <div class="card"><h3>Cómo se hace</h3><ol class="how">${e.how.map(s => `<li>${esc(s)}</li>`).join('')}</ol><p class="tip">${esc(e.tip)}</p></div>` : ''}
     ${all.length ? `<h2>Tus marcas</h2><div class="card stats">
@@ -2016,6 +2022,9 @@ document.addEventListener('scroll', e => {
   sl.nextElementSibling?.querySelectorAll('i').forEach((d, j) => d.classList.toggle('on', j === k));
 }, true);
 render();
+// Muñeco 3D: se carga aparte; al estar listo se repinta para cambiar el muñeco plano por el 3D.
+window.onFig3d = () => render();
+FIG3D.start();
 sync(); // al abrir: trae lo de otros dispositivos y sube lo de este
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') sync(); });
 </script>

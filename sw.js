@@ -1,7 +1,7 @@
 // La app (HTML/JS) se pide siempre a internet y solo se usa la copia guardada sin conexión;
 // las fotos de ejercicios se sirven desde la copia (no cambian). Cambia C en cada versión.
-const C = 'forja-v42';
-const SHELL = ['./', 'index.html', 'ejercicios.js', 'manifest.json', 'icon.svg', 'icon-192.png', 'apple-touch-icon.png'];
+const C = 'forja-v43';
+const SHELL = ['./', 'index.html', 'ejercicios.js', 'muneco.js', 'muneco3d.js', 'muneco.glb', 'manifest.json', 'icon.svg', 'icon-192.png', 'apple-touch-icon.png'];
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(C).then(c => c.addAll(SHELL.map(u => new Request(u, { cache: 'reload' })))));
   self.skipWaiting();
@@ -21,6 +21,11 @@ self.addEventListener('notificationclick', e => {
 });
 self.addEventListener('fetch', e => {
   const url = new URL(e.request.url);
+  // three.js desde el CDN: se guarda la primera vez para que el muñeco 3D funcione sin conexión
+  if (e.request.method === 'GET' && url.hostname === 'cdn.jsdelivr.net') {
+    e.respondWith(caches.match(e.request).then(r => r || fetch(e.request).then(res => { if (res.ok) { const c = res.clone(); caches.open(C).then(k => k.put(e.request, c)); } return res; })));
+    return;
+  }
   if (e.request.method !== 'GET' || url.origin !== location.origin) return;
   const keep = res => { if (res.ok) { const copy = res.clone(); caches.open(C).then(c => c.put(e.request, copy)); } return res; };
   if (url.pathname.includes('/img/')) {
