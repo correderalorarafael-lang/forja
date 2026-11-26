@@ -363,6 +363,20 @@ nav button b{font-size:19px}
 .next-hint{display:block;margin-top:12px;font-size:11px}
 .onbadge{display:inline-flex;align-items:center;gap:3px;margin-left:6px;padding:2px 8px;border-radius:999px;background:rgba(183,154,255,.16);color:var(--acc);font-size:10px;letter-spacing:.06em}.onbadge .ui-icon{width:11px;height:11px}
 .folder.isOn{padding:4px 12px 8px;border-radius:20px;border:1px solid rgba(183,154,255,.22);background:rgba(183,154,255,.04)}
+/* botón ✓ físico: relieve que se hunde al pulsar y se queda hundido y verde cuando la serie está hecha */
+.chk{--edge:#07070f;position:relative;border:0;color:#8f8eb0;background:linear-gradient(180deg,#34344f,#272740);
+  box-shadow:0 3px 0 var(--edge),0 5px 8px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.12);transform:translateY(0);
+  transition:transform .09s ease-out,box-shadow .09s ease-out,background .18s,color .18s}
+.chk:active:not(:disabled){transform:translateY(3px)!important;box-shadow:0 0 0 var(--edge),inset 0 2px 5px rgba(0,0,0,.45),inset 0 1px 0 rgba(255,255,255,.04)}
+.set.done .chk{--edge:#2e8f7a;color:#0d3a30;background:linear-gradient(180deg,#5fd9bd,#3fbfa2);border:0;
+  transform:translateY(3px);box-shadow:0 0 0 var(--edge),inset 0 2px 5px rgba(0,0,0,.28),inset 0 1px 0 rgba(255,255,255,.2);animation:none}
+.set.justdone .chk{animation:chk-hunde .34s cubic-bezier(.3,.7,.3,1)}
+@keyframes chk-hunde{0%{transform:translateY(3px);background:linear-gradient(180deg,#34344f,#272740);color:#8f8eb0;box-shadow:0 0 0 var(--edge),inset 0 2px 5px rgba(0,0,0,.45)}
+  45%{transform:translateY(4px)}100%{transform:translateY(3px)}}
+.set.justundo .chk{animation:chk-sube .26s cubic-bezier(.3,1.5,.5,1)}
+@keyframes chk-sube{from{transform:translateY(3px);box-shadow:0 0 0 var(--edge)}}
+.set.done .chk .ui-icon,.chk{font-size:18px}
+@media(prefers-reduced-motion:reduce){.set.justdone .chk,.set.justundo .chk{animation:none!important}}
 body:has(#rest.show) main{padding-bottom:200px}
 .confetti{position:fixed;inset:0;width:100%;height:100%;z-index:30;pointer-events:none}
 @media(max-width:380px){
@@ -400,7 +414,7 @@ body:has(#rest.show) main{padding-bottom:200px}
   <button class="btn wide" data-a="wheelDone">Listo</button></div></div>
 <script src="ejercicios.js"></script>
 <script>
-const VERSION = 41; // súbelo junto con C en sw.js
+const VERSION = 42; // súbelo junto con C en sw.js
 const MUSCLES =['Pecho','Espalda','Hombros','Brazos','Piernas','Core'];
 const RESTS = Array.from({ length: 41 }, (_, i) => i * 15); // 0 a 10 min, de 15 en 15 s
 const RING = 119.38; // perímetro del anillo de descanso (2π·19)
@@ -623,7 +637,7 @@ function exCard(it, i) {
     ${prog ? `<p class="prog ${prog.up ? 'up' : ''}">${prog.msg}</p>` : ''}
     ${note || noteOpen === it.exId ? `<div class="noterow ${fresh === 'note:' + it.exId ? 'fresh' : ''}">${uiIcon('note')}<input class="note" data-note="${it.exId}" id="note-${it.exId}" value="${esc(note)}" placeholder="Escribe una nota (asiento, agarre…)"></div>` : ''}
     <div class="sh"><span>Serie</span><span>Anterior</span><span>kg</span><span>Reps</span><span>RPE</span><span>✓</span></div>
-    ${it.sets.map((s, j) => { const p = prev[j], sg = suggest(it, j); return `<div class="setwrap ${fresh === `set:${i}:${j}` ? 'fresh' : ''}"><div class="swbg" aria-hidden="true">${uiIcon('trash')} Borrar</div><div class="set ${s.done ? 'done' : ''} ${fresh === `done:${i}:${j}` ? 'justdone' : ''}" data-si="${i}" data-sj="${j}">
+    ${it.sets.map((s, j) => { const p = prev[j], sg = suggest(it, j); return `<div class="setwrap ${fresh === `set:${i}:${j}` ? 'fresh' : ''}"><div class="swbg" aria-hidden="true">${uiIcon('trash')} Borrar</div><div class="set ${s.done ? 'done' : ''} ${fresh === `done:${i}:${j}` ? 'justdone' : fresh === `undo:${i}:${j}` ? 'justundo' : ''}" data-si="${i}" data-sj="${j}">
       <button class="n t-${s.t || ''} ${j === prJ ? 'isPr' : ''}" data-a="setMenu" data-i="${i}" data-j="${j}" aria-label="Opciones de la serie${j === prJ ? ' (récord)' : ''}">${j === prJ ? uiIcon('award') : setLabel(it.sets, j)}</button>
       <button class="prev" data-a="usePrev" data-i="${i}" data-j="${j}" ${p ? '' : 'disabled'}>${p ? `${fmt(p.kg)}×${p.reps}` : '—'}</button>
       <input inputmode="decimal" data-i="${i}" data-j="${j}" data-f="kg" value="${s.kg === '' ? '' : fmt(s.kg)}" placeholder="${sg ? fmt(sg.kg) : p ? fmt(p.kg) : ''}" aria-label="kg">
@@ -1698,7 +1712,7 @@ const A = {
         S.active.restEnd = Date.now() + it.rest * 1000; S.active.restTotal = it.rest; scheduleRest(S.active.restEnd);
         if (window.Notification?.permission === 'default') Notification.requestPermission(); // se pide con un toque, como exige iOS
       }
-    } else s.done = false;
+    } else { s.done = false; fresh = `undo:${d.i}:${d.j}`; navigator.vibrate?.(8); }
     save(); render();
   },
   exMenu: d => {
